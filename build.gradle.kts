@@ -1,6 +1,9 @@
 plugins {
-    id("org.openrewrite.build.language-library") version "latest.release"
+    id("org.openrewrite.build.recipe-library") version "1.8.1"
 }
+
+group = "org.openrewrite.recipe"
+description = "Add SQL query processing capability to OpenRewrite."
 
 dependencies {
     implementation("com.github.jsqlparser:jsqlparser:latest.release")
