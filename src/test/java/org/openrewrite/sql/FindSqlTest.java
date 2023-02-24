@@ -83,7 +83,7 @@ public class FindSqlTest implements RewriteTest {
               assertThat(row.getOperation()).isEqualTo(DatabaseColumnsUsed.Operation.SELECT);
               assertThat(row.getTable()).isEqualTo("recipe_run_repository");
               assertThat(row.getColumn()).isEqualTo("repository_origin");
-          }),
+          }).cycles(1).expectedCyclesThatMakeChanges(1),
           java(
             """
               class Test {
@@ -112,7 +112,7 @@ public class FindSqlTest implements RewriteTest {
               assertThat(row.getOperation()).isEqualTo(DatabaseColumnsUsed.Operation.SELECT);
               assertThat(row.getTable()).isEqualTo("recipe_run_repository");
               assertThat(row.getColumn()).isEqualTo("repository_origin");
-          }),
+          }).cycles(1).expectedCyclesThatMakeChanges(1),
           yaml(
             """
               query: >

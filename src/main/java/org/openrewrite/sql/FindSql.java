@@ -61,7 +61,6 @@ public class FindSql extends Recipe {
                 Tree t = sourceFile;
 
                 t = new PlainTextVisitor<ExecutionContext>() {
-
                     @Override
                     public PlainText visitText(PlainText text, ExecutionContext ctx) {
                         return find(ctx, getCursor(), text.getText());
@@ -88,15 +87,20 @@ public class FindSql extends Recipe {
             }
 
             private <T extends Tree> T find(ExecutionContext ctx, Cursor cursor, String text) {
-                SourceFile sourceFile = getCursor().getValue() instanceof SourceFile ?
-                        getCursor().getValue() :
-                        getCursor().firstEnclosingOrThrow(SourceFile.class);
-                T t = cursor.getValue();
-                for (DatabaseColumnsUsed.Row row : detector.rows(sourceFile, text)) {
-                    used.insertRow(ctx, row);
-                    t = SearchResult.found(t);
-                }
-                return t;
+                //noinspection unchecked
+                return (T) cursor
+                        .getPathAsStream(v -> v instanceof SourceFile)
+                        .findFirst()
+                        .map(SourceFile.class::cast)
+                        .map(sourceFile -> {
+                            Tree t = cursor.getValue();
+                            for (DatabaseColumnsUsed.Row row : detector.rows(sourceFile, text)) {
+                                used.insertRow(ctx, row);
+                                t = SearchResult.found(t);
+                            }
+                            return t;
+                        })
+                        .orElseGet(cursor::getValue);
             }
         };
     }
