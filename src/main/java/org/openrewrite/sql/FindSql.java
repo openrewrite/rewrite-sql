@@ -43,7 +43,7 @@ public class FindSql extends Recipe {
         return Applicability.or(
                 Applicability.not(new PlainTextVisitor<ExecutionContext>() {
                     @Override
-                    public PlainText visitText(PlainText text, ExecutionContext executionContext) {
+                    public PlainText visitText(PlainText text, ExecutionContext ctx) {
                         return SearchResult.found(text);
                     }
                 }),
@@ -69,7 +69,7 @@ public class FindSql extends Recipe {
 
                 t = new JavaIsoVisitor<ExecutionContext>() {
                     @Override
-                    public J.Literal visitLiteral(J.Literal literal, ExecutionContext executionContext) {
+                    public J.Literal visitLiteral(J.Literal literal, ExecutionContext ctx) {
                         return literal.getValue() instanceof String ?
                                 find(ctx, getCursor(), (String) literal.getValue()) :
                                 literal;
@@ -78,7 +78,7 @@ public class FindSql extends Recipe {
 
                 t = new YamlIsoVisitor<ExecutionContext>() {
                     @Override
-                    public Yaml.Scalar visitScalar(Yaml.Scalar scalar, ExecutionContext executionContext) {
+                    public Yaml.Scalar visitScalar(Yaml.Scalar scalar, ExecutionContext ctx) {
                         return find(ctx, getCursor(), scalar.getValue());
                     }
                 }.visit(t, ctx);
