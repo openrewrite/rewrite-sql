@@ -1,16 +1,18 @@
 plugins {
-    id("org.openrewrite.build.recipe-library") version "1.8.1"
+    id("org.openrewrite.build.recipe-library") version "latest.release"
 }
 
 group = "org.openrewrite.recipe"
 description = "Add SQL query processing capability to OpenRewrite."
 
+val rewriteVersion = rewriteRecipe.rewriteVersion.get()
 dependencies {
+    implementation(platform("org.openrewrite:rewrite-bom:$rewriteVersion"))
     implementation("com.github.jsqlparser:jsqlparser:latest.release")
-    implementation("org.openrewrite:rewrite-core:latest.integration")
-    implementation("org.openrewrite:rewrite-java:latest.integration")
-    implementation("org.openrewrite:rewrite-yaml:latest.integration")
+    implementation("org.openrewrite:rewrite-core")
+    implementation("org.openrewrite:rewrite-java")
+    implementation("org.openrewrite:rewrite-yaml")
 
-    testImplementation("org.openrewrite:rewrite-test:latest.integration")
-    testRuntimeOnly("org.openrewrite:rewrite-java-17:latest.integration")
+    testImplementation("org.openrewrite:rewrite-test")
+    testRuntimeOnly("org.openrewrite:rewrite-java-17")
 }
