@@ -16,6 +16,7 @@
 package org.openrewrite.sql;
 
 import org.openrewrite.*;
+import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.marker.SearchResult;
@@ -39,9 +40,9 @@ public class FindSql extends Recipe {
     }
 
     @Override
-    protected TreeVisitor<?, ExecutionContext> getSingleSourceApplicableTest() {
-        return Applicability.or(
-                Applicability.not(new PlainTextVisitor<ExecutionContext>() {
+    public TreeVisitor<?, ExecutionContext> getVisitor() {
+        TreeVisitor<?, ExecutionContext> check = Preconditions.or(
+                Preconditions.not(new PlainTextVisitor<ExecutionContext>() {
                     @Override
                     public PlainText visitText(PlainText text, ExecutionContext ctx) {
                         return SearchResult.found(text);
@@ -49,16 +50,16 @@ public class FindSql extends Recipe {
                 }),
                 new HasSourcePath<>("**/*.sql")
         );
-    }
 
-    @Override
-    protected TreeVisitor<?, ExecutionContext> getVisitor() {
-        return new TreeVisitor<Tree, ExecutionContext>() {
+        return Preconditions.check(check, new TreeVisitor<Tree, ExecutionContext>() {
             final SqlDetector detector = new SqlDetector();
 
             @Override
-            public Tree visitSourceFile(SourceFile sourceFile, ExecutionContext ctx) {
-                Tree t = sourceFile;
+            public @Nullable Tree visit(@Nullable Tree tree, ExecutionContext ctx) {
+                if(!(tree instanceof SourceFile)) {
+                    return tree;
+                }
+                SourceFile t = (SourceFile) tree;
 
                 t = new PlainTextVisitor<ExecutionContext>() {
                     @Override
@@ -67,7 +68,7 @@ public class FindSql extends Recipe {
                     }
                 }.visit(t, ctx);
 
-                t = new JavaIsoVisitor<ExecutionContext>() {
+                t = (SourceFile) new JavaIsoVisitor<ExecutionContext>() {
                     @Override
                     public J.Literal visitLiteral(J.Literal literal, ExecutionContext ctx) {
                         return literal.getValue() instanceof String ?
@@ -76,7 +77,7 @@ public class FindSql extends Recipe {
                     }
                 }.visit(t, ctx);
 
-                t = new YamlIsoVisitor<ExecutionContext>() {
+                t = (SourceFile) new YamlIsoVisitor<ExecutionContext>() {
                     @Override
                     public Yaml.Scalar visitScalar(Yaml.Scalar scalar, ExecutionContext ctx) {
                         return find(ctx, getCursor(), scalar.getValue());
@@ -102,6 +103,6 @@ public class FindSql extends Recipe {
                         })
                         .orElseGet(cursor::getValue);
             }
-        };
+        });
     }
 }
