@@ -27,15 +27,12 @@ import org.openrewrite.Recipe;
 import org.openrewrite.SourceFile;
 import org.openrewrite.TreeVisitor;
 import org.openrewrite.internal.StringUtils;
-import org.openrewrite.java.JavaVisitor;
+import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.search.UsesJavaVersion;
 import org.openrewrite.java.style.IntelliJ;
 import org.openrewrite.java.style.TabsAndIndentsStyle;
-import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
-import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.TypeUtils;
-import org.openrewrite.marker.Markers;
 
 import com.github.vertical_blank.sqlformatter.SqlFormatter;
 import com.github.vertical_blank.sqlformatter.languages.Dialect;
@@ -75,9 +72,10 @@ public class FormatSql extends Recipe {
 
     @Override
     protected TreeVisitor<?, ExecutionContext> getVisitor() {
-        return new JavaVisitor<ExecutionContext>() {
+        return new JavaIsoVisitor<ExecutionContext>() {
             @Override
-            public J visitLiteral(J.Literal literal, ExecutionContext ctx) {
+            public J.Literal visitLiteral(J.Literal lit, ExecutionContext ctx) {
+                J.Literal literal = super.visitLiteral(lit, ctx);
                 final SqlDetector detector = new SqlDetector();
 
                 if (isTextBlock(literal)) {
@@ -104,30 +102,24 @@ public class FormatSql extends Recipe {
                         formatted = "\n" + indentation + formatted;
 
                         // add last line to ensure the closing delimiter is in a new line to manage
-                        // indentation & remove the
+                        // indentation & remove theformatted
                         // need to escape ending quote in the content
                         boolean isEndsWithNewLine = literal.getValueSource().endsWith("\n");
                         if (!isEndsWithNewLine) {
                             formatted = formatted + "\\\n" + indentation;
                         }
 
-                        return new J.Literal(randomId(), literal.getPrefix(), Markers.EMPTY, value,
-                                String.format("\"\"\"%s\"\"\"", formatted), null, JavaType.Primitive.String);
+                        return literal.withValueSource(String.format("\"\"\"%s\"\"\"", formatted));
                     }
                 }
 
                 return literal;
             }
 
-            private boolean isTextBlock(Expression expr) {
-                if (expr instanceof J.Literal) {
-                    J.Literal l = (J.Literal) expr;
-
-                    return TypeUtils.isString(l.getType()) &&
-                            l.getValueSource() != null &&
-                            l.getValueSource().startsWith("\"\"\"");
-                }
-                return false;
+            private boolean isTextBlock(J.Literal l) {
+                return TypeUtils.isString(l.getType()) &&
+                        l.getValueSource() != null &&
+                        l.getValueSource().startsWith("\"\"\"");
             }
         };
     }
@@ -146,15 +138,14 @@ public class FormatSql extends Recipe {
     }
 
     /**
-     *
      * @param concatenation a string to present concatenation context
      * @param tabSize       from autoDetect
      * @return an int array of size 2, 1st value is tab count, 2nd value is space
-     *         count
+     * count
      */
     private static int[] shortestPrefixAfterNewline(String concatenation, int tabSize) {
         int shortest = Integer.MAX_VALUE;
-        int[] shortestPair = new int[] { 0, 0 };
+        int[] shortestPair = new int[]{0, 0};
         int tabCount = 0;
         int spaceCount = 0;
 
