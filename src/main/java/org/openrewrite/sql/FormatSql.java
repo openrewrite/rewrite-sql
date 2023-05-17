@@ -88,7 +88,7 @@ public class FormatSql extends Recipe {
                 return binary;
             }
 
-            private static boolean isTextBlock(Expression expr) {
+            private boolean isTextBlock(Expression expr) {
                 if (expr instanceof J.Literal) {
                     J.Literal l = (J.Literal) expr;
 
