@@ -128,6 +128,19 @@ public class SqlDetector {
         return maybeSql != null && SIMPLE_HEURISTIC.matcher(maybeSql).find();
     }
 
+    public boolean isSql(@Nullable String maybeSql) {
+        if (!probablySql(maybeSql)) {
+            return false;
+        }
+
+        try {
+            CCJSqlParserUtil.parse(maybeSql);
+        } catch (JSQLParserException e) {
+            return false; // not a valid SQL statement
+        }
+        return true;
+    }
+
     @Value
     @EqualsAndHashCode(callSuper = false)
     private static class ColumnDetector extends ExpressionVisitorAdapter {
