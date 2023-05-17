@@ -15,13 +15,12 @@
  */
 package org.openrewrite.sql;
 
+import static org.openrewrite.java.Assertions.*;
+
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
-import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
-
-import static org.openrewrite.java.Assertions.*;
 
 public class FormatSqlTest implements RewriteTest {
 
@@ -49,9 +48,12 @@ public class FormatSqlTest implements RewriteTest {
               """
                 class Test {
                     String query = \"""
-                            SELECT * FROM
-                            my_table
-                            WHERE something = 1;\\
+                            SELECT
+                              *
+                            FROM
+                              my_table
+                            WHERE
+                              something = 1;\\
                             \""";
                 }
                 """

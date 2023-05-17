@@ -17,14 +17,20 @@ package org.openrewrite.sql;
 
 import static org.openrewrite.Tree.randomId;
 
+import java.util.Optional;
+
 import javax.annotation.Nullable;
 
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Option;
 import org.openrewrite.Recipe;
+import org.openrewrite.SourceFile;
 import org.openrewrite.TreeVisitor;
+import org.openrewrite.internal.StringUtils;
 import org.openrewrite.java.JavaVisitor;
 import org.openrewrite.java.search.UsesJavaVersion;
+import org.openrewrite.java.style.IntelliJ;
+import org.openrewrite.java.style.TabsAndIndentsStyle;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
@@ -79,6 +85,32 @@ public class FormatSql extends Recipe {
 
                     if (detector.isSql(value)) {
                         String formatted = SqlFormatter.of(Dialect.valueOf(sqlDialect)).format(value);
+
+                        TabsAndIndentsStyle tabsAndIndentsStyle = Optional
+                                .ofNullable(getCursor().firstEnclosingOrThrow(SourceFile.class)
+                                        .getStyle(TabsAndIndentsStyle.class))
+                                .orElse(IntelliJ.tabsAndIndents());
+                        boolean useTab = tabsAndIndentsStyle.getUseTabCharacter();
+                        int tabSize = tabsAndIndentsStyle.getTabSize();
+
+                        String indentation = getIndents(literal.getValueSource(), useTab, tabSize);
+
+                        // preserve trailing spaces
+                        formatted = formatted.replace(" \n", "\\s\n");
+                        // handle preceding indentation
+                        formatted = formatted.replace("\n", "\n" + indentation);
+
+                        // add first line
+                        formatted = "\n" + indentation + formatted;
+
+                        // add last line to ensure the closing delimiter is in a new line to manage
+                        // indentation & remove the
+                        // need to escape ending quote in the content
+                        boolean isEndsWithNewLine = literal.getValueSource().endsWith("\n");
+                        if (!isEndsWithNewLine) {
+                            formatted = formatted + "\\\n" + indentation;
+                        }
+
                         return new J.Literal(randomId(), literal.getPrefix(), Markers.EMPTY, value,
                                 String.format("\"\"\"%s\"\"\"", formatted), null, JavaType.Primitive.String);
                     }
@@ -98,5 +130,70 @@ public class FormatSql extends Recipe {
                 return false;
             }
         };
+    }
+
+    private static String getIndents(String concatenation, boolean useTabCharacter, int tabSize) {
+        int[] tabAndSpaceCounts = shortestPrefixAfterNewline(concatenation, tabSize);
+        int tabCount = tabAndSpaceCounts[0];
+        int spaceCount = tabAndSpaceCounts[1];
+        if (useTabCharacter) {
+            return StringUtils.repeat("\t", tabCount) +
+                    StringUtils.repeat(" ", spaceCount);
+        } else {
+            // replace tab with spaces if the style is using spaces
+            return StringUtils.repeat(" ", tabCount * tabSize + spaceCount);
+        }
+    }
+
+    /**
+     *
+     * @param concatenation a string to present concatenation context
+     * @param tabSize       from autoDetect
+     * @return an int array of size 2, 1st value is tab count, 2nd value is space
+     *         count
+     */
+    private static int[] shortestPrefixAfterNewline(String concatenation, int tabSize) {
+        int shortest = Integer.MAX_VALUE;
+        int[] shortestPair = new int[] { 0, 0 };
+        int tabCount = 0;
+        int spaceCount = 0;
+
+        boolean afterNewline = false;
+        for (int i = 0; i < concatenation.length(); i++) {
+            char c = concatenation.charAt(i);
+            if (c != ' ' && c != '\t' && afterNewline) {
+                if ((spaceCount + tabCount * tabSize) < shortest) {
+                    shortest = spaceCount + tabCount;
+                    shortestPair[0] = tabCount;
+                    shortestPair[1] = spaceCount;
+                }
+                afterNewline = false;
+            }
+
+            if (c == '\n') {
+                afterNewline = true;
+                spaceCount = 0;
+                tabCount = 0;
+            } else if (c == ' ') {
+                if (afterNewline) {
+                    spaceCount++;
+                }
+            } else if (c == '\t') {
+                if (afterNewline) {
+                    tabCount++;
+                }
+            } else {
+                afterNewline = false;
+                spaceCount = 0;
+                tabCount = 0;
+            }
+        }
+
+        if ((spaceCount + tabCount > 0) && ((spaceCount + tabCount) < shortest)) {
+            shortestPair[0] = tabCount;
+            shortestPair[1] = spaceCount;
+        }
+
+        return shortestPair;
     }
 }
