@@ -15,28 +15,29 @@
  */
 package org.openrewrite.sql;
 
-import static org.openrewrite.java.Assertions.java;
-import static org.openrewrite.java.Assertions.javaVersion;
-
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
+import static org.openrewrite.java.Assertions.*;
+
 public class FormatSqlTest implements RewriteTest {
 
-  @Override
-  public void defaults(RecipeSpec spec) {
-    spec.recipe(new FormatSql()).allSources(s -> s.markers(javaVersion(17)));
-  }
+    @Override
+    public void defaults(RecipeSpec spec) {
+        spec.recipe(new FormatSql());
+    }
 
-  @DocumentExample
-  @Test
-  void regular() {
-    rewriteRun(
-        // language=java
-        java(
-            """
+    @DocumentExample
+    @Test
+    void regular() {
+        rewriteRun(
+          version(
+            // language=java
+            java(
+              """
                 class Test {
                     String query = \"""
                             SELECT * FROM my_table
@@ -45,7 +46,7 @@ public class FormatSqlTest implements RewriteTest {
                             \""";
                 }
                 """,
-            """
+              """
                 class Test {
                     String query = \"""
                             SELECT * FROM
@@ -54,7 +55,8 @@ public class FormatSqlTest implements RewriteTest {
                             \""";
                 }
                 """
-          )
-      );
-  }
+            )
+            , 17)
+        );
+    }
 }

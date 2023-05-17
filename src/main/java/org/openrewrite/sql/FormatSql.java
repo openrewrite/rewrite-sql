@@ -24,7 +24,7 @@ import org.openrewrite.Option;
 import org.openrewrite.Recipe;
 import org.openrewrite.TreeVisitor;
 import org.openrewrite.java.JavaVisitor;
-import org.openrewrite.java.search.HasJavaVersion;
+import org.openrewrite.java.search.UsesJavaVersion;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
@@ -64,28 +64,27 @@ public class FormatSql extends Recipe {
 
     @Override
     protected TreeVisitor<?, ExecutionContext> getSingleSourceApplicableTest() {
-        return new HasJavaVersion("17", true).getVisitor();
+        return new UsesJavaVersion<>(17);
     }
 
     @Override
     protected TreeVisitor<?, ExecutionContext> getVisitor() {
         return new JavaVisitor<ExecutionContext>() {
             @Override
-            public J visitBinary(J.Binary binary, ExecutionContext ctx) {
+            public J visitLiteral(J.Literal literal, ExecutionContext ctx) {
                 final SqlDetector detector = new SqlDetector();
 
-                if (isTextBlock(binary)) {
-                    J.Literal literal = (J.Literal) ((Expression) binary);
+                if (isTextBlock(literal)) {
                     String value = literal.getValue().toString();
 
                     if (detector.isSql(value)) {
                         String formatted = SqlFormatter.of(Dialect.valueOf(sqlDialect)).format(value);
-                        return new J.Literal(randomId(), binary.getPrefix(), Markers.EMPTY, value,
+                        return new J.Literal(randomId(), literal.getPrefix(), Markers.EMPTY, value,
                                 String.format("\"\"\"%s\"\"\"", formatted), null, JavaType.Primitive.String);
                     }
                 }
 
-                return binary;
+                return literal;
             }
 
             private boolean isTextBlock(Expression expr) {
