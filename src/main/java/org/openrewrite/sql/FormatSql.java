@@ -98,7 +98,7 @@ public class FormatSql extends Recipe {
         };
     }
 
-    private static String indent(String valueSource, String formatted, TabsAndIndentsStyle style) {
+    private static String indent(String valueSource, String formatted, @Nullable TabsAndIndentsStyle style) {
         TabsAndIndentsStyle tabsAndIndentsStyle = Optional
                 .ofNullable(style)
                 .orElse(IntelliJ.tabsAndIndents());
