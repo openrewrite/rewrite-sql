@@ -15,8 +15,6 @@
  */
 package org.openrewrite.sql;
 
-import static org.openrewrite.Tree.randomId;
-
 import java.util.Optional;
 
 import javax.annotation.Nullable;
@@ -76,40 +74,16 @@ public class FormatSql extends Recipe {
             @Override
             public J.Literal visitLiteral(J.Literal lit, ExecutionContext ctx) {
                 J.Literal literal = super.visitLiteral(lit, ctx);
-
                 if (isTextBlock(literal)) {
-                    String original = (String) literal.getValue();
-                    if (new SqlDetector().isSql(original)) {
-                        String formatted = SqlFormatter.of(Dialect.valueOf(sqlDialect)).format(original);
-
-                        TabsAndIndentsStyle tabsAndIndentsStyle = Optional
-                                .ofNullable(getCursor().firstEnclosingOrThrow(SourceFile.class)
-                                        .getStyle(TabsAndIndentsStyle.class))
-                                .orElse(IntelliJ.tabsAndIndents());
-                        boolean useTab = tabsAndIndentsStyle.getUseTabCharacter();
-                        int tabSize = tabsAndIndentsStyle.getTabSize();
-
-                        String indentation = getIndents(literal.getValueSource(), useTab, tabSize);
-
-                        // preserve trailing spaces
-                        formatted = formatted.replace(" \n", "\\s\n");
-                        // handle preceding indentation
-                        formatted = formatted.replace("\n", "\n" + indentation);
-
-                        // add first line
-                        formatted = "\n" + indentation + formatted;
-
-                        // add last line to ensure the closing delimiter is in a new line to manage
-                        // indentation & remove theformatted
-                        // need to escape ending quote in the content
-                        boolean isEndsWithNewLine = literal.getValueSource().endsWith("\n");
-                        if (!isEndsWithNewLine) {
-                            formatted = formatted + "\\\n" + indentation;
-                        }
-
+                    String originalValue = (String) literal.getValue();
+                    if (new SqlDetector().isSql(originalValue)) {
+                        String formatted = SqlFormatter.of(Dialect.valueOf(sqlDialect)).format(originalValue);
+                        TabsAndIndentsStyle style = getCursor().firstEnclosingOrThrow(SourceFile.class)
+                                .getStyle(TabsAndIndentsStyle.class);
+                        String indented = indent(literal.getValueSource(), formatted, style);
                         return literal
-                                .withValue(formatted)
-                                .withValueSource(String.format("\"\"\"%s\"\"\"", formatted));
+                                .withValue(indented)
+                                .withValueSource(String.format("\"\"\"%s\"\"\"", indented));
                     }
                 }
 
@@ -122,6 +96,33 @@ public class FormatSql extends Recipe {
                         l.getValueSource().startsWith("\"\"\"");
             }
         };
+    }
+
+    private static String indent(String valueSource, String formatted, TabsAndIndentsStyle style) {
+        TabsAndIndentsStyle tabsAndIndentsStyle = Optional
+                .ofNullable(style)
+                .orElse(IntelliJ.tabsAndIndents());
+        boolean useTab = tabsAndIndentsStyle.getUseTabCharacter();
+        int tabSize = tabsAndIndentsStyle.getTabSize();
+
+        String indentation = getIndents(valueSource, useTab, tabSize);
+
+        // preserve trailing spaces
+        String indented = formatted.replace(" \n", "\\s\n");
+        // handle preceding indentation
+        indented = indented.replace("\n", "\n" + indentation);
+
+        // add first line
+        indented = "\n" + indentation + indented;
+
+        // add last line to ensure the closing delimiter is in a new line to manage
+        // indentation & remove theformatted
+        // need to escape ending quote in the content
+        boolean isEndsWithNewLine = valueSource.endsWith("\n");
+        if (!isEndsWithNewLine) {
+            indented = indented + "\\\n" + indentation;
+        }
+        return indented;
     }
 
     private static String getIndents(String concatenation, boolean useTabCharacter, int tabSize) {
