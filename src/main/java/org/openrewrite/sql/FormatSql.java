@@ -76,13 +76,11 @@ public class FormatSql extends Recipe {
             @Override
             public J.Literal visitLiteral(J.Literal lit, ExecutionContext ctx) {
                 J.Literal literal = super.visitLiteral(lit, ctx);
-                final SqlDetector detector = new SqlDetector();
 
                 if (isTextBlock(literal)) {
-                    String value = literal.getValue().toString();
-
-                    if (detector.isSql(value)) {
-                        String formatted = SqlFormatter.of(Dialect.valueOf(sqlDialect)).format(value);
+                    String original = (String) literal.getValue();
+                    if (new SqlDetector().isSql(original)) {
+                        String formatted = SqlFormatter.of(Dialect.valueOf(sqlDialect)).format(original);
 
                         TabsAndIndentsStyle tabsAndIndentsStyle = Optional
                                 .ofNullable(getCursor().firstEnclosingOrThrow(SourceFile.class)
@@ -109,7 +107,9 @@ public class FormatSql extends Recipe {
                             formatted = formatted + "\\\n" + indentation;
                         }
 
-                        return literal.withValueSource(String.format("\"\"\"%s\"\"\"", formatted));
+                        return literal
+                                .withValue(formatted)
+                                .withValueSource(String.format("\"\"\"%s\"\"\"", formatted));
                     }
                 }
 
