@@ -58,7 +58,7 @@ public class FormatSqlTest implements RewriteTest {
                 }
                 """
             )
-            , 17)
+            , 15)
         );
     }
 }

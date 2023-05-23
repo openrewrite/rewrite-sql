@@ -65,7 +65,7 @@ public class FormatSql extends Recipe {
 
     @Override
     protected TreeVisitor<?, ExecutionContext> getSingleSourceApplicableTest() {
-        return new UsesJavaVersion<>(17);
+        return new UsesJavaVersion<>(15);
     }
 
     @Override
