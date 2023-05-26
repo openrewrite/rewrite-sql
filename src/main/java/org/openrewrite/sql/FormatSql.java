@@ -82,7 +82,7 @@ public class FormatSql extends Recipe {
                                 .getStyle(TabsAndIndentsStyle.class);
                         String indented = indent(literal.getValueSource(), formatted, style);
                         return literal
-                                .withValue(indented)
+                                .withValue(formatted)
                                 .withValueSource(String.format("\"\"\"%s\"\"\"", indented));
                     }
                 }
