@@ -43,7 +43,7 @@ import lombok.Value;
 @Value
 @EqualsAndHashCode(callSuper = false)
 public class FormatSql extends Recipe {
-    @Option(displayName = "SQL dialect to be used to format SQL snippets.", description = "Check out https://github.com/vertical-blank/sql-formatter#dialect for supported dialects.", valid = {"sql", "mariadb", "mysql", "postgresql", "db2", "plsql", "n1ql", "redshift", "spark", "tsql"}, example = "PostgreSql", required = false)
+    @Option(displayName = "SQL dialect to be used to format SQL snippets.", description = "Check out https://github.com/vertical-blank/sql-formatter#dialect for supported dialects.", valid = {"sql", "mariadb", "mysql", "postgresql", "db2", "plsql", "n1ql", "redshift", "spark", "tsql"}, example = "postgresql", required = false)
     @Nullable
     String sqlDialect;
     
