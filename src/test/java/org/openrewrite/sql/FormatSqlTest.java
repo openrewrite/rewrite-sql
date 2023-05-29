@@ -144,6 +144,36 @@ public class FormatSqlTest implements RewriteTest {
     }
 
     @Test
+    void test_query_custom_config() {
+        rewriteRun(
+          spec -> spec.recipe(new FormatSql("sql","\t", 80, true)),
+          version(
+            // language=java
+            java(
+              """
+                class Test {
+                    String query = \"""
+                      delete from tbl_scores
+                      where t.row_num > 1 OR a in (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);\""";
+                }
+                """,
+              """
+                class Test {
+                    String query = \"""
+                      DELETE FROM
+                      	tbl_scores
+                      WHERE
+                      	t.row_num > 1
+                      	OR a IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);\\
+                      \""";
+                }
+                """
+            )
+            , 15)
+        );
+    }
+
+    @Test
     void test_insert_postgres() {
         rewriteRun(
           spec -> spec.recipe(new FormatSql("postgresql")),
@@ -350,6 +380,36 @@ public class FormatSqlTest implements RewriteTest {
     void test_delete_mariadb() {
         rewriteRun(
           spec -> spec.recipe(new FormatSql("mariadb")),
+          version(
+            // language=java
+            java(
+              """
+                class Test {
+                    String query = \"""
+                            delete from contacts
+                            where last_name = 'Smith';\\
+                            \""";
+                }
+                """,
+              """
+                class Test {
+                    String query = \"""
+                            delete from 
+                              contacts
+                            where 
+                              last_name = 'Smith';\\
+                            \""";
+                }
+                """
+            )
+            , 15)
+        );
+    }
+
+    @Test
+    void test_unkown_dialect() {
+        rewriteRun(
+          spec -> spec.recipe(new FormatSql("some db")),
           version(
             // language=java
             java(

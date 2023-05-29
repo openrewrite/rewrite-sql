@@ -33,6 +33,8 @@ import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.TypeUtils;
 
 import com.github.vertical_blank.sqlformatter.SqlFormatter;
+import com.github.vertical_blank.sqlformatter.core.FormatConfig;
+import com.github.vertical_blank.sqlformatter.core.FormatConfig.FormatConfigBuilder;
 import com.github.vertical_blank.sqlformatter.languages.Dialect;
 
 import lombok.EqualsAndHashCode;
@@ -44,13 +46,32 @@ public class FormatSql extends Recipe {
     @Option(displayName = "SQL dialect to be used to format SQL snippets.", description = "Check out https://github.com/vertical-blank/sql-formatter#dialect for supported dialects.", valid = {"sql", "mariadb", "mysql", "postgresql", "db2", "plsql", "n1ql", "redshift", "spark", "tsql"}, example = "PostgreSql", required = false)
     @Nullable
     String sqlDialect;
+    
+    @Option(displayName = "Characters used for indentation.", description = "Defaults to two spaces.", example = "    ", required = false)
+    @Nullable
+    String indent;
+
+    @Option(displayName = "Maximum length to treat inline block as one line.", description = "Defaults to 50.", example = "100", required = false)
+    @Nullable
+    Integer maxColumnLength;
+
+    @Option(displayName = "Converts keywords to uppercase.", description = "Defaults to false (not safe to use when SQL dialect has case-sensitive identifiers).", example = "true", required = false)
+    @Nullable
+    Boolean uppercase;
 
     public FormatSql() {
-        sqlDialect = Dialect.StandardSql.name();
+        this(Dialect.StandardSql.name());
     }
 
     public FormatSql(String sqlDialect) {
+        this(sqlDialect, null, null, null);
+    }
+
+    public FormatSql(String sqlDialect, String indent, Integer maxColumnLength, Boolean uppercase) {
         this.sqlDialect = sqlDialect;
+        this.indent = indent;
+        this.maxColumnLength = maxColumnLength;
+        this.uppercase = uppercase;
     }
 
     @Override
@@ -77,7 +98,10 @@ public class FormatSql extends Recipe {
                 if (isTextBlock(literal)) {
                     String originalValue = (String) literal.getValue();
                     if (new SqlDetector().isSql(originalValue)) {
-                        String formatted = SqlFormatter.of(sqlDialect).format(originalValue);
+
+                        FormatConfig conf = buildConfig();
+
+                        String formatted = SqlFormatter.of(sqlDialect).format(originalValue, conf);
                         TabsAndIndentsStyle style = getCursor().firstEnclosingOrThrow(SourceFile.class)
                                 .getStyle(TabsAndIndentsStyle.class);
                         String indented = indent(literal.getValueSource(), formatted, style);
@@ -98,6 +122,23 @@ public class FormatSql extends Recipe {
                         l.getValueSource().startsWith("\"\"\"");
             }
         };
+    }
+
+    private FormatConfig buildConfig() {
+        FormatConfigBuilder builder = FormatConfig.builder();
+
+        if (indent != null) {
+            builder = builder.indent(indent);
+        }
+        if (uppercase != null) {
+            builder = builder.uppercase(uppercase);
+        }
+        if (maxColumnLength != null) {
+            builder = builder.maxColumnLength(maxColumnLength);
+        }
+
+        FormatConfig conf = builder.build();
+        return conf;
     }
 
     private static String indent(String valueSource, String formatted, @Nullable TabsAndIndentsStyle style) {
@@ -144,11 +185,11 @@ public class FormatSql extends Recipe {
      * @param concatenation a string to present concatenation context
      * @param tabSize       from autoDetect
      * @return an int array of size 2, 1st value is tab count, 2nd value is space
-     * count
+     *         count
      */
     private static int[] shortestPrefixAfterNewline(String concatenation, int tabSize) {
         int shortest = Integer.MAX_VALUE;
-        int[] shortestPair = new int[]{0, 0};
+        int[] shortestPair = new int[] { 0, 0 };
         int tabCount = 0;
         int spaceCount = 0;
 
