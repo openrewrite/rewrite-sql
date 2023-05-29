@@ -178,7 +178,6 @@ public class FormatSqlTest implements RewriteTest {
         );
     }
 
-    @DocumentExample
     @Test
     void test_complex_query_postgresql() {
         rewriteRun(
