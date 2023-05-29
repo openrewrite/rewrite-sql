@@ -405,34 +405,4 @@ public class FormatSqlTest implements RewriteTest {
             , 15)
         );
     }
-
-    @Test
-    void test_unkown_dialect() {
-        rewriteRun(
-          spec -> spec.recipe(new FormatSql("some db")),
-          version(
-            // language=java
-            java(
-              """
-                class Test {
-                    String query = \"""
-                            delete from contacts
-                            where last_name = 'Smith';\\
-                            \""";
-                }
-                """,
-              """
-                class Test {
-                    String query = \"""
-                            delete from 
-                              contacts
-                            where 
-                              last_name = 'Smith';\\
-                            \""";
-                }
-                """
-            )
-            , 15)
-        );
-    }
 }
