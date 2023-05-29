@@ -62,7 +62,6 @@ public class FormatSqlTest implements RewriteTest {
         );
     }
 
-    @DocumentExample
     @Test
     void test_single_line() {
         rewriteRun(
@@ -92,7 +91,6 @@ public class FormatSqlTest implements RewriteTest {
         );
     }
 
-    @DocumentExample
     @Test
     void test_complex_query() {
         rewriteRun(
@@ -145,7 +143,6 @@ public class FormatSqlTest implements RewriteTest {
         );
     }
 
-    @DocumentExample
     @Test
     void test_insert_postgres() {
         rewriteRun(
@@ -314,7 +311,6 @@ public class FormatSqlTest implements RewriteTest {
         );
     }
 
-    @DocumentExample
     @Test
     void test_update_postgres() {
         rewriteRun(
@@ -351,7 +347,6 @@ public class FormatSqlTest implements RewriteTest {
         );
     }
 
-    @DocumentExample
     @Test
     void test_delete_mariadb() {
         rewriteRun(
