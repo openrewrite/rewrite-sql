@@ -77,7 +77,7 @@ public class FormatSql extends Recipe {
                 if (isTextBlock(literal)) {
                     String originalValue = (String) literal.getValue();
                     if (new SqlDetector().isSql(originalValue)) {
-                        String formatted = SqlFormatter.of(Dialect.valueOf(sqlDialect)).format(originalValue);
+                        String formatted = SqlFormatter.of(sqlDialect).format(originalValue);
                         TabsAndIndentsStyle style = getCursor().firstEnclosingOrThrow(SourceFile.class)
                                 .getStyle(TabsAndIndentsStyle.class);
                         String indented = indent(literal.getValueSource(), formatted, style);
