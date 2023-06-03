@@ -16,6 +16,7 @@
 package org.openrewrite.sql;
 
 import org.openrewrite.*;
+import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.marker.SearchResult;
@@ -39,51 +40,47 @@ public class FindSql extends Recipe {
     }
 
     @Override
-    protected TreeVisitor<?, ExecutionContext> getSingleSourceApplicableTest() {
-        return Applicability.or(
-                Applicability.not(new PlainTextVisitor<ExecutionContext>() {
+    public TreeVisitor<?, ExecutionContext> getVisitor() {
+        return Preconditions.check(Preconditions.or(
+                Preconditions.not(new PlainTextVisitor<ExecutionContext>() {
                     @Override
                     public PlainText visitText(PlainText text, ExecutionContext ctx) {
                         return SearchResult.found(text);
                     }
                 }),
                 new HasSourcePath<>("**/*.sql")
-        );
-    }
-
-    @Override
-    protected TreeVisitor<?, ExecutionContext> getVisitor() {
-        return new TreeVisitor<Tree, ExecutionContext>() {
+        ), new TreeVisitor<Tree, ExecutionContext>() {
             final SqlDetector detector = new SqlDetector();
 
             @Override
-            public Tree visitSourceFile(SourceFile sourceFile, ExecutionContext ctx) {
-                Tree t = sourceFile;
+            public @Nullable Tree preVisit(Tree tree, ExecutionContext ctx) {
+                if (tree instanceof SourceFile) {
+                    stopAfterPreVisit();
+                    tree = new PlainTextVisitor<ExecutionContext>() {
+                        @Override
+                        public PlainText visitText(PlainText text, ExecutionContext ctx) {
+                            return find(ctx, getCursor(), text.getText());
+                        }
+                    }.visit(tree, ctx);
 
-                t = new PlainTextVisitor<ExecutionContext>() {
-                    @Override
-                    public PlainText visitText(PlainText text, ExecutionContext ctx) {
-                        return find(ctx, getCursor(), text.getText());
-                    }
-                }.visit(t, ctx);
+                    tree = new JavaIsoVisitor<ExecutionContext>() {
+                        @Override
+                        public J.Literal visitLiteral(J.Literal literal, ExecutionContext ctx) {
+                            return literal.getValue() instanceof String ?
+                                    find(ctx, getCursor(), (String) literal.getValue()) :
+                                    literal;
+                        }
+                    }.visit(tree, ctx);
 
-                t = new JavaIsoVisitor<ExecutionContext>() {
-                    @Override
-                    public J.Literal visitLiteral(J.Literal literal, ExecutionContext ctx) {
-                        return literal.getValue() instanceof String ?
-                                find(ctx, getCursor(), (String) literal.getValue()) :
-                                literal;
-                    }
-                }.visit(t, ctx);
+                    tree = new YamlIsoVisitor<ExecutionContext>() {
+                        @Override
+                        public Yaml.Scalar visitScalar(Yaml.Scalar scalar, ExecutionContext ctx) {
+                            return find(ctx, getCursor(), scalar.getValue());
+                        }
+                    }.visit(tree, ctx);
 
-                t = new YamlIsoVisitor<ExecutionContext>() {
-                    @Override
-                    public Yaml.Scalar visitScalar(Yaml.Scalar scalar, ExecutionContext ctx) {
-                        return find(ctx, getCursor(), scalar.getValue());
-                    }
-                }.visit(t, ctx);
-
-                return t;
+                }
+                return tree;
             }
 
             private <T extends Tree> T find(ExecutionContext ctx, Cursor cursor, String text) {
@@ -102,6 +99,6 @@ public class FindSql extends Recipe {
                         })
                         .orElseGet(cursor::getValue);
             }
-        };
+        });
     }
 }
