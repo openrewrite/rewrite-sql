@@ -45,8 +45,10 @@ import java.util.regex.Pattern;
 import static java.util.Collections.emptyList;
 
 public class SqlDetector {
-    private static final Pattern SIMPLE_HEURISTIC = Pattern.compile("SELECT|UPDATE|DELETE|INSERT",
+    private static final Pattern SIMPLE_SQL_HEURISTIC = Pattern.compile("SELECT|UPDATE|DELETE|INSERT",
             Pattern.CASE_INSENSITIVE);
+
+    private static final Pattern SIMPLE_DDL_HEURISTIC = Pattern.compile("CREATE|ALTER|DROP|TRUNCATE", Pattern.CASE_INSENSITIVE);
 
     public List<DatabaseColumnsUsed.Row> rows(SourceFile sourceFile, @Nullable String maybeSql) {
         if (!probablySql(maybeSql)) {
@@ -124,14 +126,19 @@ public class SqlDetector {
         return rows.get() == null ? emptyList() : rows.get();
     }
 
-    private boolean probablySql(@Nullable String maybeSql) {
-        return maybeSql != null && SIMPLE_HEURISTIC.matcher(maybeSql).find();
+    public boolean probablySql(@Nullable String maybeSql) {
+        return maybeSql != null && SIMPLE_SQL_HEURISTIC.matcher(maybeSql).find();
+    }
+
+    public boolean probablyDdl(@Nullable String maybeDdl) {
+        return maybeDdl != null && SIMPLE_DDL_HEURISTIC.matcher(maybeDdl).find();
     }
 
     public boolean isSql(@Nullable String maybeSql) {
-        if (!probablySql(maybeSql)) {
+        if (!(probablySql(maybeSql) || probablyDdl(maybeSql))) {
             return false;
         }
+        
 
         try {
             CCJSqlParserUtil.parse(maybeSql);

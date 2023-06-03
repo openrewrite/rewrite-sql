@@ -17,7 +17,6 @@ package org.openrewrite.sql;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -43,13 +42,19 @@ public class SqlDetectorTest {
         assertThat(classUnderTest.isSql(maybeSql)).isFalse();
     }
 
-    @Disabled("dealt with later")
     @ParameterizedTest
     @ValueSource(strings = {
-      "Truncate tab",
-      "DROP FUNCTION func CASCADE"
+      "Truncate tab"
     })
     void test_isExoticSql(String maybeSql){
+        assertThat(classUnderTest.isSql(maybeSql)).isTrue();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+      "DROP FUNCTION func CASCADE"
+    })
+    void test_isDdl(String maybeSql){
         assertThat(classUnderTest.isSql(maybeSql)).isTrue();
     }
 

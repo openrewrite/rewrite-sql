@@ -101,7 +101,8 @@ public class FormatSql extends Recipe {
                 J.Literal literal = super.visitLiteral(lit, ctx);
                 if (isTextBlock(literal)) {
                     String originalValue = (String) literal.getValue();
-                    if (new SqlDetector().isSql(originalValue)) {
+                    SqlDetector sqlDetector = new SqlDetector();
+                    if (sqlDetector.probablySql(originalValue) || sqlDetector.probablyDdl(originalValue)) {
 
                         FormatConfig conf = buildConfig();
 
