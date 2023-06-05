@@ -86,45 +86,24 @@ public class FormatSql extends Recipe {
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
-        return Preconditions.check(new UsesJavaVersion<>(15), new SqlTextBlockFormatVisitor());
+        return Preconditions.check(
+                new UsesJavaVersion<>(15),
+                new SqlTextBlockFormatVisitor(sqlDialect, indent, maxColumnLength, uppercase));
     }
+}
 
-    private class SqlTextBlockFormatVisitor extends JavaIsoVisitor<ExecutionContext> {
-        @Override
-        public J.Literal visitLiteral(J.Literal lit, ExecutionContext ctx) {
-            J.Literal literal = super.visitLiteral(lit, ctx);
-            if (isTextBlock(literal)) {
-                String originalValue = (String) literal.getValue();
-                SqlDetector sqlDetector = new SqlDetector();
-                if (sqlDetector.probablySql(originalValue) || sqlDetector.probablyDdl(originalValue)) {
+class SqlTextBlockFormatVisitor extends JavaIsoVisitor<ExecutionContext> {
+    private final SqlDetector sqlDetector = new SqlDetector();
+    private final FormatConfig config;
+    private final SqlFormatter.Formatter sqlFormatter;
 
-                    FormatConfig conf = buildConfig();
-
-                    String formatted = SqlFormatter.of(sqlDialect).format(originalValue, conf);
-                    TabsAndIndentsStyle style = getCursor().firstEnclosingOrThrow(SourceFile.class)
-                            .getStyle(TabsAndIndentsStyle.class);
-                    String indented = indent(literal.getValueSource(), formatted, style);
-                    if (!originalValue.equals(formatted)) {
-                        return literal
-                                .withValue(formatted)
-                                .withValueSource(String.format("\"\"\"%s\"\"\"", indented));
-                    }
-                }
-            }
-
-            return literal;
-        }
-
-        private boolean isTextBlock(J.Literal l) {
-            return TypeUtils.isString(l.getType()) &&
-                    l.getValueSource() != null &&
-                    l.getValueSource().startsWith("\"\"\"");
-        }
-    }
-
-    private FormatConfig buildConfig() {
+    SqlTextBlockFormatVisitor(
+            String sqlDialect,
+            String indent,
+            Integer maxColumnLength,
+            Boolean uppercase
+    ) {
         FormatConfigBuilder builder = FormatConfig.builder();
-
         if (indent != null) {
             builder = builder.indent(indent);
         }
@@ -134,10 +113,40 @@ public class FormatSql extends Recipe {
         if (maxColumnLength != null) {
             builder = builder.maxColumnLength(maxColumnLength);
         }
-        return builder.build();
+        this.config = builder.build();
+        this.sqlFormatter = SqlFormatter.of(sqlDialect);
     }
 
-    private static String indent(String valueSource, String formatted, @Nullable TabsAndIndentsStyle style) {
+    @Override
+    public J.Literal visitLiteral(J.Literal lit, ExecutionContext ctx) {
+        J.Literal literal = super.visitLiteral(lit, ctx);
+        if (isTextBlock(literal)) {
+            String originalValue = (String) literal.getValue();
+            if (sqlDetector.isSql(originalValue)) {
+                String formatted = sqlFormatter.format(originalValue, config);
+                if (!originalValue.equals(formatted)) {
+                    TabsAndIndentsStyle style = getCursor().firstEnclosingOrThrow(SourceFile.class)
+                            .getStyle(TabsAndIndentsStyle.class);
+                    String indented = Indenter.indent(literal.getValueSource(), formatted, style);
+                    return literal
+                            .withValue(formatted)
+                            .withValueSource(String.format("\"\"\"%s\"\"\"", indented));
+                }
+            }
+        }
+        return literal;
+    }
+
+    private boolean isTextBlock(J.Literal l) {
+        return TypeUtils.isString(l.getType()) &&
+                l.getValueSource() != null &&
+                l.getValueSource().startsWith("\"\"\"");
+    }
+}
+
+class Indenter {
+
+    public static String indent(String valueSource, String formatted, @Nullable TabsAndIndentsStyle style) {
         TabsAndIndentsStyle tabsAndIndentsStyle = Optional
                 .ofNullable(style)
                 .orElse(IntelliJ.tabsAndIndents());
