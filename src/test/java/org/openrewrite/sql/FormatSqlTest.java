@@ -63,7 +63,7 @@ class FormatSqlTest implements RewriteTest {
     }
 
     @Test
-    void test_single_line() {
+    void single_line() {
         rewriteRun(
           // language=java
           java(
@@ -90,7 +90,7 @@ class FormatSqlTest implements RewriteTest {
     }
 
     @Test
-    void test_complex_query() {
+    void complex_query() {
         rewriteRun(
           // language=java
           java(
@@ -140,7 +140,7 @@ class FormatSqlTest implements RewriteTest {
     }
 
     @Test
-    void test_query_custom_config() {
+    void query_custom_config() {
         rewriteRun(
           spec -> spec.recipe(new FormatSql("sql", "\t", 80, true)),
           // language=java
@@ -168,7 +168,7 @@ class FormatSqlTest implements RewriteTest {
     }
 
     @Test
-    void test_insert_postgres() {
+    void insert_postgres() {
         rewriteRun(
           spec -> spec.recipe(new FormatSql("postgresql")),
           // language=java
@@ -201,7 +201,7 @@ class FormatSqlTest implements RewriteTest {
     }
 
     @Test
-    void test_complex_query_postgresql() {
+    void complex_query_postgresql() {
         rewriteRun(
           spec -> spec.recipe(new FormatSql("postgresql")),
           // language=java
@@ -331,7 +331,7 @@ class FormatSqlTest implements RewriteTest {
     }
 
     @Test
-    void test_update_postgres() {
+    void update_postgres() {
         rewriteRun(
           spec -> spec.recipe(new FormatSql("postgresql")),
           // language=java
@@ -365,7 +365,7 @@ class FormatSqlTest implements RewriteTest {
     }
 
     @Test
-    void test_delete_mariadb() {
+    void delete_mariadb() {
         rewriteRun(
           spec -> spec.recipe(new FormatSql("mariadb")),
           // language=java
@@ -393,7 +393,7 @@ class FormatSqlTest implements RewriteTest {
     }
 
     @Test
-    void test_create_table_postgres() {
+    void create_table_postgres() {
         rewriteRun(
           spec -> spec.recipe(new FormatSql("postgresql", "    ", 80, true)),
           // language=java
@@ -466,7 +466,7 @@ class FormatSqlTest implements RewriteTest {
     }
 
     @Test
-    void test_false_detected_sql_in_json_stays_untouched() {
+    void false_detected_sql_in_json_stays_untouched() {
         rewriteRun(
           // language=java
           java(
@@ -491,7 +491,7 @@ class FormatSqlTest implements RewriteTest {
     }
 
     @Test
-    void test_sql_in_text_embedded() {
+    void sql_in_text_embedded() {
         rewriteRun(
           // language=java
           java(
@@ -508,7 +508,7 @@ class FormatSqlTest implements RewriteTest {
     }
 
     @Test
-    void test_false_postive_detection() {
+    void false_postive_detection() {
         rewriteRun(
           // language=java
           java(
@@ -526,7 +526,7 @@ class FormatSqlTest implements RewriteTest {
     }
 
     @Test
-    void test_no_sql_stays_untouched() {
+    void no_sql_stays_untouched() {
         rewriteRun(
           // language=java
           java(
