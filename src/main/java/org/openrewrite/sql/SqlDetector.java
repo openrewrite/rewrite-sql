@@ -138,10 +138,11 @@ public class SqlDetector {
         if (!(probablySql(maybeSql) || probablyDdl(maybeSql))) {
             return false;
         }
-        
 
         try {
-            CCJSqlParserUtil.parse(maybeSql);
+            for (String sql : maybeSql.split(";")) {
+                CCJSqlParserUtil.parse(sql);
+            }
         } catch (JSQLParserException e) {
             return false; // not a valid SQL statement
         }
