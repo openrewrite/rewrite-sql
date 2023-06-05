@@ -19,11 +19,7 @@ import java.util.Optional;
 
 import javax.annotation.Nullable;
 
-import org.openrewrite.ExecutionContext;
-import org.openrewrite.Option;
-import org.openrewrite.Recipe;
-import org.openrewrite.SourceFile;
-import org.openrewrite.TreeVisitor;
+import org.openrewrite.*;
 import org.openrewrite.internal.StringUtils;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.search.UsesJavaVersion;
@@ -43,14 +39,14 @@ import lombok.Value;
 @Value
 @EqualsAndHashCode(callSuper = false)
 public class FormatSql extends Recipe {
-    @Option(displayName = "SQL dialect to be used to format SQL snippets.", 
-            description = "Check out https://github.com/vertical-blank/sql-formatter#dialect for supported dialects.", 
-            valid = {"sql", "mariadb", "mysql", "postgresql", "db2", "plsql", "n1ql", "redshift", "spark", "tsql"}, 
-            example = "postgresql", 
+    @Option(displayName = "SQL dialect to be used to format SQL snippets.",
+            description = "Check out https://github.com/vertical-blank/sql-formatter#dialect for supported dialects.",
+            valid = {"sql", "mariadb", "mysql", "postgresql", "db2", "plsql", "n1ql", "redshift", "spark", "tsql"},
+            example = "postgresql",
             required = false)
     @Nullable
     String sqlDialect;
-    
+
     @Option(displayName = "Characters used for indentation.", description = "Defaults to two spaces.", example = "    ", required = false)
     @Nullable
     String indent;
@@ -89,44 +85,41 @@ public class FormatSql extends Recipe {
     }
 
     @Override
-    protected TreeVisitor<?, ExecutionContext> getSingleSourceApplicableTest() {
-        return new UsesJavaVersion<>(15);
+    public TreeVisitor<?, ExecutionContext> getVisitor() {
+        return Preconditions.check(new UsesJavaVersion<>(15), new SqlTextBlockFormatVisitor());
     }
 
-    @Override
-    protected TreeVisitor<?, ExecutionContext> getVisitor() {
-        return new JavaIsoVisitor<ExecutionContext>() {
-            @Override
-            public J.Literal visitLiteral(J.Literal lit, ExecutionContext ctx) {
-                J.Literal literal = super.visitLiteral(lit, ctx);
-                if (isTextBlock(literal)) {
-                    String originalValue = (String) literal.getValue();
-                    SqlDetector sqlDetector = new SqlDetector();
-                    if (sqlDetector.probablySql(originalValue) || sqlDetector.probablyDdl(originalValue)) {
+    private class SqlTextBlockFormatVisitor extends JavaIsoVisitor<ExecutionContext> {
+        @Override
+        public J.Literal visitLiteral(J.Literal lit, ExecutionContext ctx) {
+            J.Literal literal = super.visitLiteral(lit, ctx);
+            if (isTextBlock(literal)) {
+                String originalValue = (String) literal.getValue();
+                SqlDetector sqlDetector = new SqlDetector();
+                if (sqlDetector.probablySql(originalValue) || sqlDetector.probablyDdl(originalValue)) {
 
-                        FormatConfig conf = buildConfig();
+                    FormatConfig conf = buildConfig();
 
-                        String formatted = SqlFormatter.of(sqlDialect).format(originalValue, conf);
-                        TabsAndIndentsStyle style = getCursor().firstEnclosingOrThrow(SourceFile.class)
-                                .getStyle(TabsAndIndentsStyle.class);
-                        String indented = indent(literal.getValueSource(), formatted, style);
-                        if (!originalValue.equals(formatted)) {
-                            return literal
-                                    .withValue(formatted)
-                                    .withValueSource(String.format("\"\"\"%s\"\"\"", indented));
-                        }
+                    String formatted = SqlFormatter.of(sqlDialect).format(originalValue, conf);
+                    TabsAndIndentsStyle style = getCursor().firstEnclosingOrThrow(SourceFile.class)
+                            .getStyle(TabsAndIndentsStyle.class);
+                    String indented = indent(literal.getValueSource(), formatted, style);
+                    if (!originalValue.equals(formatted)) {
+                        return literal
+                                .withValue(formatted)
+                                .withValueSource(String.format("\"\"\"%s\"\"\"", indented));
                     }
                 }
-
-                return literal;
             }
 
-            private boolean isTextBlock(J.Literal l) {
-                return TypeUtils.isString(l.getType()) &&
-                        l.getValueSource() != null &&
-                        l.getValueSource().startsWith("\"\"\"");
-            }
-        };
+            return literal;
+        }
+
+        private boolean isTextBlock(J.Literal l) {
+            return TypeUtils.isString(l.getType()) &&
+                    l.getValueSource() != null &&
+                    l.getValueSource().startsWith("\"\"\"");
+        }
     }
 
     private FormatConfig buildConfig() {
@@ -141,9 +134,7 @@ public class FormatSql extends Recipe {
         if (maxColumnLength != null) {
             builder = builder.maxColumnLength(maxColumnLength);
         }
-
-        FormatConfig conf = builder.build();
-        return conf;
+        return builder.build();
     }
 
     private static String indent(String valueSource, String formatted, @Nullable TabsAndIndentsStyle style) {
@@ -190,11 +181,11 @@ public class FormatSql extends Recipe {
      * @param concatenation a string to present concatenation context
      * @param tabSize       from autoDetect
      * @return an int array of size 2, 1st value is tab count, 2nd value is space
-     *         count
+     * count
      */
     private static int[] shortestPrefixAfterNewline(String concatenation, int tabSize) {
         int shortest = Integer.MAX_VALUE;
-        int[] shortestPair = new int[] { 0, 0 };
+        int[] shortestPair = new int[]{0, 0};
         int tabCount = 0;
         int spaceCount = 0;
 
