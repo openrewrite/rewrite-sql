@@ -12,6 +12,7 @@ dependencies {
     implementation("org.openrewrite:rewrite-core")
     implementation("org.openrewrite:rewrite-java")
     implementation("org.openrewrite:rewrite-yaml")
+    implementation("com.github.vertical-blank:sql-formatter:2.0.+")
 
     testImplementation("org.openrewrite:rewrite-test")
     testRuntimeOnly("org.openrewrite:rewrite-java-17")
