@@ -23,7 +23,7 @@ import org.openrewrite.DocumentExample;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
-public class FormatSqlTest implements RewriteTest {
+class FormatSqlTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {

@@ -28,7 +28,7 @@ import static org.openrewrite.test.SourceSpecs.text;
 import static org.openrewrite.yaml.Assertions.yaml;
 
 @SuppressWarnings({"SqlResolve", "SqlNoDataSourceInspection"})
-public class FindSqlTest implements RewriteTest {
+class FindSqlTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {

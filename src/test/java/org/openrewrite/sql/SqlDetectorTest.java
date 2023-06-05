@@ -20,17 +20,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-public class SqlDetectorTest {
-    
-    SqlDetector classUnderTest = new SqlDetector();
+class SqlDetectorTest {
+
+    private SqlDetector detector = new SqlDetector();
 
     @ParameterizedTest
     @ValueSource(strings = {
       "UPDATE tab SET x = y",
       "DELETE FROM table_name WHERE condition = true;"
     })
-    void test_isSql(String maybeSql){
-        assertThat(classUnderTest.isSql(maybeSql)).isTrue();
+    void test_isSql(String maybeSql) {
+        assertThat(detector.isSql(maybeSql)).isTrue();
     }
 
     @ParameterizedTest
@@ -38,25 +38,24 @@ public class SqlDetectorTest {
       "This will be SELECTed by the heuristic but not parse as SQL",
       "The heuristic won't match this at all"
     })
-    void test_isNotSql(String maybeSql){
-        assertThat(classUnderTest.isSql(maybeSql)).isFalse();
+    void test_isNotSql(String maybeSql) {
+        assertThat(detector.isSql(maybeSql)).isFalse();
     }
 
     @ParameterizedTest
     @ValueSource(strings = {
       "Truncate tab"
     })
-    void test_isExoticSql(String maybeSql){
-        assertThat(classUnderTest.isSql(maybeSql)).isTrue();
+    void test_isExoticSql(String maybeSql) {
+        assertThat(detector.isSql(maybeSql)).isTrue();
     }
 
     @ParameterizedTest
     @ValueSource(strings = {
       "DROP FUNCTION func CASCADE"
     })
-    void test_isDdl(String maybeSql){
-        assertThat(classUnderTest.isSql(maybeSql)).isTrue();
+    void test_isDdl(String maybeSql) {
+        assertThat(detector.isSql(maybeSql)).isTrue();
     }
-
 
 }

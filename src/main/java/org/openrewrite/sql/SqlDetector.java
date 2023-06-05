@@ -126,27 +126,26 @@ public class SqlDetector {
         return rows.get() == null ? emptyList() : rows.get();
     }
 
-    public boolean probablySql(@Nullable String maybeSql) {
+    private boolean probablySql(@Nullable String maybeSql) {
         return maybeSql != null && SIMPLE_SQL_HEURISTIC.matcher(maybeSql).find();
     }
 
-    public boolean probablyDdl(@Nullable String maybeDdl) {
+    private boolean probablyDdl(@Nullable String maybeDdl) {
         return maybeDdl != null && SIMPLE_DDL_HEURISTIC.matcher(maybeDdl).find();
     }
 
     public boolean isSql(@Nullable String maybeSql) {
-        if (!(probablySql(maybeSql) || probablyDdl(maybeSql))) {
-            return false;
-        }
-
-        try {
-            for (String sql : maybeSql.split(";")) {
-                CCJSqlParserUtil.parse(sql);
+        if (probablySql(maybeSql) || probablyDdl(maybeSql)) {
+            try {
+                for (String sql : maybeSql.split(";")) {
+                    CCJSqlParserUtil.parse(sql);
+                }
+                return true;
+            } catch (JSQLParserException e) {
+                // not a valid SQL statement
             }
-        } catch (JSQLParserException e) {
-            return false; // not a valid SQL statement
         }
-        return true;
+        return false;
     }
 
     @Value
