@@ -48,6 +48,7 @@ class FindSqlTest implements RewriteTest {
 
     @Test
     void select() {
+        //noinspection SqlDialectInspection
         rewriteRun(
           spec -> spec.dataTable(DatabaseColumnsUsed.Row.class, rows -> {
               assertThat(rows).hasSize(1);
@@ -80,11 +81,13 @@ class FindSqlTest implements RewriteTest {
           spec -> spec.dataTable(DatabaseColumnsUsed.Row.class, rows -> {
               assertThat(rows).hasSize(1);
               DatabaseColumnsUsed.Row row = rows.get(0);
+              assertThat(row.getLineNumber()).isEqualTo(2);
               assertThat(row.getOperation()).isEqualTo(DatabaseColumnsUsed.Operation.SELECT);
               assertThat(row.getTable()).isEqualTo("recipe_run_repository");
               assertThat(row.getColumn()).isEqualTo("repository_origin");
           }).cycles(1).expectedCyclesThatMakeChanges(1),
           java(
+            //language=java
             """
               class Test {
                 String aSelect = \"""
@@ -109,12 +112,15 @@ class FindSqlTest implements RewriteTest {
           spec -> spec.dataTable(DatabaseColumnsUsed.Row.class, rows -> {
               assertThat(rows).hasSize(1);
               DatabaseColumnsUsed.Row row = rows.get(0);
+              assertThat(row.getLineNumber()).isEqualTo(2);
               assertThat(row.getOperation()).isEqualTo(DatabaseColumnsUsed.Operation.SELECT);
               assertThat(row.getTable()).isEqualTo("recipe_run_repository");
               assertThat(row.getColumn()).isEqualTo("repository_origin");
           }).cycles(1).expectedCyclesThatMakeChanges(1),
           yaml(
+            //language=yaml
             """
+              foo: bar
               query: >
                   SELECT distinct(repository_origin)
                   FROM recipe_run_repository
@@ -131,6 +137,7 @@ class FindSqlTest implements RewriteTest {
 
     @Test
     void update() {
+        //noinspection SqlDialectInspection
         rewriteRun(
           spec -> spec.dataTable(DatabaseColumnsUsed.Row.class, rows -> {
               assertThat(rows).hasSize(1);
@@ -159,6 +166,7 @@ class FindSqlTest implements RewriteTest {
 
     @Test
     void delete() {
+        //noinspection SqlDialectInspection
         rewriteRun(
           spec -> spec.dataTable(DatabaseColumnsUsed.Row.class, rows -> {
               assertThat(rows).hasSize(1);

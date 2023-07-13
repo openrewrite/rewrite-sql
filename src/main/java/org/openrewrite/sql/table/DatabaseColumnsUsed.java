@@ -35,6 +35,10 @@ public class DatabaseColumnsUsed extends DataTable<DatabaseColumnsUsed.Row> {
                 description = "The path to the source file.")
         String sourcePath;
 
+        @Column(displayName = "Line number",
+                description = "The line number the SQL operation appears at")
+        int lineNumber;
+
         @Column(displayName = "Operation",
                 description = "Whether the column is read, written, etc.")
         Operation operation;
