@@ -19,6 +19,7 @@ import org.openrewrite.*;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.*;
+import org.openrewrite.marker.GitProvenance;
 import org.openrewrite.marker.SearchResult;
 import org.openrewrite.sql.table.DatabaseColumnsUsed;
 import org.openrewrite.text.PlainText;
@@ -163,7 +164,10 @@ public class FindSql extends Recipe {
                         .map(SourceFile.class::cast)
                         .map(sourceFile -> {
                             Tree t = cursor.getValue();
-                            for (DatabaseColumnsUsed.Row row : detector.rows(sourceFile, lineNumber, text)) {
+                            String commitHash = sourceFile.getMarkers().findFirst(GitProvenance.class)
+                                    .map(GitProvenance::getChange)
+                                    .orElse(null);
+                            for (DatabaseColumnsUsed.Row row : detector.rows(sourceFile, commitHash, lineNumber, text)) {
                                 used.insertRow(ctx, row);
                                 t = SearchResult.found(t);
                             }

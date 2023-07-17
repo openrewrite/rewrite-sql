@@ -39,6 +39,11 @@ public class DatabaseColumnsUsed extends DataTable<DatabaseColumnsUsed.Row> {
                 description = "The line number the SQL operation appears at")
         int lineNumber;
 
+        @Column(displayName = "Commit hash",
+                description = "The commit hash. Used to generate a link to the source code.")
+        @Nullable
+        String getCommitHash;
+
         @Column(displayName = "Operation",
                 description = "Whether the column is read, written, etc.")
         Operation operation;

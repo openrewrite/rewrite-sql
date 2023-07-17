@@ -50,7 +50,7 @@ public class SqlDetector {
 
     private static final Pattern SIMPLE_DDL_HEURISTIC = Pattern.compile("CREATE|ALTER|DROP|TRUNCATE", Pattern.CASE_INSENSITIVE);
 
-    public List<DatabaseColumnsUsed.Row> rows(SourceFile sourceFile, int lineNumber, @Nullable String maybeSql) {
+    public List<DatabaseColumnsUsed.Row> rows(SourceFile sourceFile, @Nullable String commitHash, int lineNumber, @Nullable String maybeSql) {
         if (!probablySql(maybeSql)) {
             return emptyList();
         }
@@ -75,7 +75,8 @@ public class SqlDetector {
                             Table t = (Table) plainSelect.getFromItem();
                             table.push(t.getName());
                             for (SelectItem selectItem : plainSelect.getSelectItems()) {
-                                selectItem.accept(new ColumnDetector(rows, sourceFile, lineNumber, operation.peek(), table.peek()));
+                                selectItem.accept(new ColumnDetector(rows, sourceFile, lineNumber, commitHash,
+                                        operation.peek(), table.peek()));
                             }
                             table.pop();
                         }
@@ -92,7 +93,8 @@ public class SqlDetector {
                 table.push(t.getName());
                 for (UpdateSet set : update.getUpdateSets()) {
                     for (Column column : set.getColumns()) {
-                        column.accept(new ColumnDetector(rows, sourceFile, lineNumber, operation.peek(), table.peek()));
+                        column.accept(new ColumnDetector(rows, sourceFile, lineNumber, commitHash, operation.peek(),
+                                table.peek()));
                     }
                 }
                 table.pop();
@@ -106,6 +108,7 @@ public class SqlDetector {
                     addRow(rows, new DatabaseColumnsUsed.Row(
                             sourceFile.getSourcePath().toString(),
                             lineNumber,
+                            commitHash,
                             operation.peek(),
                             table.getName(),
                             null
@@ -115,6 +118,7 @@ public class SqlDetector {
                     addRow(rows, new DatabaseColumnsUsed.Row(
                             sourceFile.getSourcePath().toString(),
                             lineNumber,
+                            commitHash,
                             operation.peek(),
                             delete.getTable().getName(),
                             null
@@ -156,6 +160,8 @@ public class SqlDetector {
         AtomicReference<List<DatabaseColumnsUsed.Row>> rows;
         SourceFile sourceFile;
         int lineNumber;
+        @Nullable
+        String commitHash;
         DatabaseColumnsUsed.Operation operation;
         String table;
 
@@ -164,6 +170,7 @@ public class SqlDetector {
             DatabaseColumnsUsed.Row row = new DatabaseColumnsUsed.Row(
                     sourceFile.getSourcePath().toString(),
                     lineNumber,
+                    commitHash,
                     operation,
                     table,
                     column.getColumnName()

@@ -18,6 +18,8 @@ package org.openrewrite.sql;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.openrewrite.Tree;
+import org.openrewrite.marker.GitProvenance;
 import org.openrewrite.sql.table.DatabaseColumnsUsed;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
@@ -56,6 +58,7 @@ class FindSqlTest implements RewriteTest {
               assertThat(row.getOperation()).isEqualTo(DatabaseColumnsUsed.Operation.SELECT);
               assertThat(row.getTable()).isEqualTo("recipe_run_repository");
               assertThat(row.getColumn()).isEqualTo("repository_origin");
+              assertThat(row.getGetCommitHash()).isEqualTo("1234");
           }),
           text(
             // language=sql
@@ -67,6 +70,7 @@ class FindSqlTest implements RewriteTest {
               """,
             spec -> spec
               .path("select.sql")
+              .markers(new GitProvenance(Tree.randomId(), "origin", "main", "1234", null, null))
               .after(a -> {
                   assertThat(a).startsWith("~~>");
                   return a;
