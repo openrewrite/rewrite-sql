@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import static java.util.Collections.emptyList;
+import static org.openrewrite.PathUtils.separatorsToUnix;
 
 public class SqlDetector {
     private static final Pattern SIMPLE_SQL_HEURISTIC = Pattern.compile("SELECT|UPDATE|DELETE|INSERT",
@@ -106,7 +107,7 @@ public class SqlDetector {
                 operation.push(DatabaseColumnsUsed.Operation.DELETE);
                 for (Table table : delete.getTables()) {
                     addRow(rows, new DatabaseColumnsUsed.Row(
-                            sourceFile.getSourcePath().toString(),
+                            separatorsToUnix(sourceFile.getSourcePath().toString()),
                             lineNumber,
                             commitHash,
                             operation.peek(),
@@ -116,7 +117,7 @@ public class SqlDetector {
                 }
                 if (delete.getTable() != null) {
                     addRow(rows, new DatabaseColumnsUsed.Row(
-                            sourceFile.getSourcePath().toString(),
+                            separatorsToUnix(sourceFile.getSourcePath().toString()),
                             lineNumber,
                             commitHash,
                             operation.peek(),
@@ -168,7 +169,7 @@ public class SqlDetector {
         @Override
         public void visit(Column column) {
             DatabaseColumnsUsed.Row row = new DatabaseColumnsUsed.Row(
-                    sourceFile.getSourcePath().toString(),
+                    separatorsToUnix(sourceFile.getSourcePath().toString()),
                     lineNumber,
                     commitHash,
                     operation,
