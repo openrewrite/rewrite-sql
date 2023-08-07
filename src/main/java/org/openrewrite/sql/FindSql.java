@@ -159,7 +159,7 @@ public class FindSql extends Recipe {
             private <T extends Tree> T find(ExecutionContext ctx, int lineNumber, Cursor cursor, String text) {
                 //noinspection unchecked
                 return (T) cursor
-                        .getPathAsStream(v -> v instanceof SourceFile)
+                        .getPathAsStream(SourceFile.class::isInstance)
                         .findFirst()
                         .map(SourceFile.class::cast)
                         .map(sourceFile -> {
