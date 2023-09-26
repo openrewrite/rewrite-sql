@@ -77,7 +77,7 @@ public class FindSql extends Recipe {
                         @Override
                         public J.Literal visitLiteral(J.Literal literal, ExecutionContext ctx) {
                             visitSpace(literal.getPrefix(), Space.Location.LITERAL_PREFIX, ctx);
-                            if(literal.getValue() instanceof String) {
+                            if (literal.getValue() instanceof String) {
                                 literal = find(ctx, lineNumber, getCursor(), (String) literal.getValue());
                                 assert literal.getValue() != null;
                                 lineNumber += countLines(literal.getValue().toString());
@@ -179,7 +179,7 @@ public class FindSql extends Recipe {
     }
 
     private static int countLines(@Nullable String s) {
-        if(s == null) {
+        if (s == null) {
             return 0;
         }
         return countOccurrences(s, "\n");
@@ -187,10 +187,10 @@ public class FindSql extends Recipe {
     private static int countLines(Space space) {
         int n = countOccurrences(space.getWhitespace(), "\n");
         for (Comment comment : space.getComments()) {
-            if(comment instanceof TextComment) {
+            if (comment instanceof TextComment) {
                 TextComment textComment = (TextComment) comment;
                 n += countOccurrences(textComment.getText(), "\n");
-            } else if(comment instanceof Javadoc.DocComment) {
+            } else if (comment instanceof Javadoc.DocComment) {
                 Javadoc.DocComment docComment = (Javadoc.DocComment) comment;
                 n += countOccurrences(docComment.toString(), "\n");
             }
