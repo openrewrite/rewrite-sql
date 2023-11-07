@@ -70,7 +70,7 @@ class FindSqlTest implements RewriteTest {
               """,
             spec -> spec
               .path("select.sql")
-              .markers(new GitProvenance(Tree.randomId(), "origin", "main", "1234", null, null))
+              .markers(new GitProvenance(Tree.randomId(), "origin", "main", "1234", null, null, null))
               .after(a -> {
                   assertThat(a).startsWith("~~>");
                   return a;
