@@ -51,7 +51,7 @@ public class FindSql extends Recipe {
                         return SearchResult.found(text);
                     }
                 }),
-                new HasSourcePath<>("**/*.sql")
+                new HasSourcePath("**/*.sql")
         ), new TreeVisitor<Tree, ExecutionContext>() {
             final SqlDetector detector = new SqlDetector();
 
