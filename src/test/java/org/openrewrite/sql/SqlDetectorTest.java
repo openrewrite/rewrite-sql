@@ -22,7 +22,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class SqlDetectorTest {
 
-    private SqlDetector detector = new SqlDetector();
+    private final SqlDetector detector = new SqlDetector();
 
     @ParameterizedTest
     @ValueSource(strings = {
