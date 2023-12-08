@@ -69,7 +69,7 @@ public class FindSql extends Recipe {
                     tree = new JavaIsoVisitor<ExecutionContext>() {
                         int lineNumber = 1;
                         @Override
-                        public Space visitSpace(Space space, Space.Location loc, ExecutionContext executionContext) {
+                        public Space visitSpace(Space space, Space.Location loc, ExecutionContext ctx) {
                             lineNumber += countLines(space);
                             return space;
                         }
@@ -97,58 +97,58 @@ public class FindSql extends Recipe {
                     }
 
                     @Override
-                    public Yaml.Documents visitDocuments(Yaml.Documents documents, ExecutionContext executionContext) {
+                    public Yaml.Documents visitDocuments(Yaml.Documents documents, ExecutionContext ctx) {
                         lineNumber += countLines(documents.getPrefix());
-                        return super.visitDocuments(documents, executionContext);
+                        return super.visitDocuments(documents, ctx);
                     }
 
                     @Override
-                    public Yaml.Document visitDocument(Yaml.Document document, ExecutionContext executionContext) {
+                    public Yaml.Document visitDocument(Yaml.Document document, ExecutionContext ctx) {
                         lineNumber += countLines(document.getPrefix());
-                        return super.visitDocument(document, executionContext);
+                        return super.visitDocument(document, ctx);
                     }
 
                     @Override
-                    public Yaml.Mapping.Entry visitMappingEntry(Yaml.Mapping.Entry entry, ExecutionContext executionContext) {
+                    public Yaml.Mapping.Entry visitMappingEntry(Yaml.Mapping.Entry entry, ExecutionContext ctx) {
                         lineNumber += countLines(entry.getPrefix());
                         lineNumber += countLines(entry.getBeforeMappingValueIndicator());
-                        return super.visitMappingEntry(entry, executionContext);
+                        return super.visitMappingEntry(entry, ctx);
                     }
 
                     @Override
-                    public Yaml.Sequence.Entry visitSequenceEntry(Yaml.Sequence.Entry entry, ExecutionContext executionContext) {
+                    public Yaml.Sequence.Entry visitSequenceEntry(Yaml.Sequence.Entry entry, ExecutionContext ctx) {
                         lineNumber += countLines(entry.getPrefix());
-                        return super.visitSequenceEntry(entry, executionContext);
+                        return super.visitSequenceEntry(entry, ctx);
                     }
 
                     @Override
-                    public Yaml.Mapping visitMapping(Yaml.Mapping mapping, ExecutionContext executionContext) {
+                    public Yaml.Mapping visitMapping(Yaml.Mapping mapping, ExecutionContext ctx) {
                         lineNumber += countLines(mapping.getPrefix());
                         lineNumber += countLines(mapping.getOpeningBracePrefix());
-                        Yaml.Mapping m = super.visitMapping(mapping, executionContext);
+                        Yaml.Mapping m = super.visitMapping(mapping, ctx);
                         lineNumber += countLines(m.getClosingBracePrefix());
                         return m;
                     }
 
                     @Override
-                    public Yaml.Sequence visitSequence(Yaml.Sequence sequence, ExecutionContext executionContext) {
+                    public Yaml.Sequence visitSequence(Yaml.Sequence sequence, ExecutionContext ctx) {
                         lineNumber += countLines(sequence.getPrefix());
                         lineNumber += countLines(sequence.getOpeningBracketPrefix());
-                        Yaml.Sequence s = super.visitSequence(sequence, executionContext);
+                        Yaml.Sequence s = super.visitSequence(sequence, ctx);
                         lineNumber += countLines(s.getOpeningBracketPrefix());
                         return s;
                     }
 
                     @Override
-                    public Yaml visitAlias(Yaml.Alias alias, ExecutionContext executionContext) {
+                    public Yaml visitAlias(Yaml.Alias alias, ExecutionContext ctx) {
                         lineNumber += countLines(alias.getPrefix());
-                        return super.visitAlias(alias, executionContext);
+                        return super.visitAlias(alias, ctx);
                     }
 
                     @Override
-                    public Yaml visitAnchor(Yaml.Anchor anchor, ExecutionContext executionContext) {
+                    public Yaml visitAnchor(Yaml.Anchor anchor, ExecutionContext ctx) {
                         lineNumber += countLines(anchor.getPrefix());
-                        return super.visitAnchor(anchor, executionContext);
+                        return super.visitAnchor(anchor, ctx);
                     }
                 }.visit(tree, ctx);
 
