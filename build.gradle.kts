@@ -8,7 +8,8 @@ description = "Add SQL query processing capability to OpenRewrite."
 val rewriteVersion = rewriteRecipe.rewriteVersion.get()
 dependencies {
     implementation(platform("org.openrewrite:rewrite-bom:$rewriteVersion"))
-    implementation("com.github.jsqlparser:jsqlparser:latest.release")
+    // 4.8 broke `FormatSqlTest > complex_query_postgresql`
+    implementation("com.github.jsqlparser:jsqlparser:4.7")
     implementation("org.openrewrite:rewrite-core")
     implementation("org.openrewrite:rewrite-java")
     implementation("org.openrewrite:rewrite-yaml")
