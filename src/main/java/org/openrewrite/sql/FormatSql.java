@@ -15,10 +15,12 @@
  */
 package org.openrewrite.sql;
 
-import java.util.Optional;
-
-import javax.annotation.Nullable;
-
+import com.github.vertical_blank.sqlformatter.SqlFormatter;
+import com.github.vertical_blank.sqlformatter.core.FormatConfig;
+import com.github.vertical_blank.sqlformatter.core.FormatConfig.FormatConfigBuilder;
+import com.github.vertical_blank.sqlformatter.languages.Dialect;
+import lombok.EqualsAndHashCode;
+import lombok.Value;
 import org.openrewrite.*;
 import org.openrewrite.internal.StringUtils;
 import org.openrewrite.java.JavaIsoVisitor;
@@ -28,13 +30,8 @@ import org.openrewrite.java.style.TabsAndIndentsStyle;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.TypeUtils;
 
-import com.github.vertical_blank.sqlformatter.SqlFormatter;
-import com.github.vertical_blank.sqlformatter.core.FormatConfig;
-import com.github.vertical_blank.sqlformatter.core.FormatConfig.FormatConfigBuilder;
-import com.github.vertical_blank.sqlformatter.languages.Dialect;
-
-import lombok.EqualsAndHashCode;
-import lombok.Value;
+import java.util.Optional;
+import javax.annotation.Nullable;
 
 @Value
 @EqualsAndHashCode(callSuper = false)
