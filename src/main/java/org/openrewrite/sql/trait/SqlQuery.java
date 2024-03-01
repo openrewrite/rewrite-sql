@@ -94,15 +94,20 @@ class SqlQueryBase extends Top.Base implements SqlQuery {
     }
 
     public String mapSql(ExpressionDeParser map) {
-        StringBuilder sb = new StringBuilder();
+        try {
+            StringBuilder sb = new StringBuilder();
 
-        SelectDeParser selectDeParser = new SelectDeParser(map, sb);
-        map.setSelectVisitor(selectDeParser);
-        map.setBuffer(sb);
-        StatementDeParser statementDeParser = new StatementDeParser(map, selectDeParser, sb);
+            SelectDeParser selectDeParser = new SelectDeParser(map, sb);
+            map.setSelectVisitor(selectDeParser);
+            map.setBuffer(sb);
+            StatementDeParser statementDeParser = new StatementDeParser(map, selectDeParser, sb);
 
-        query.accept(statementDeParser);
-        return sb.toString();
+            query.accept(statementDeParser);
+            return sb.toString();
+        } catch (Throwable t) {
+            // this is invalid sql
+            return sql;
+        }
     }
 
     @Override

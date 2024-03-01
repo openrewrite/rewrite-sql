@@ -15,6 +15,7 @@
  */
 package org.openrewrite.sql.trait;
 
+import net.sf.jsqlparser.util.deparser.ExpressionDeParser;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Tree;
@@ -38,6 +39,7 @@ public class SqlQueryTest implements RewriteTest {
             public Tree preVisit(Tree tree, ExecutionContext executionContext) {
                 return SqlQuery.viewOf(getCursor())
                   .map((SqlQuery q) -> {
+                      q.mapSql(new ExpressionDeParser());
 //                      assertThat(q.mapSql(new ExpressionDeParser()))
 //                        .isEqualTo("select * from table where id = 1");
                       return SearchResult.found(tree);
@@ -45,6 +47,20 @@ public class SqlQueryTest implements RewriteTest {
                   .orSuccess(tree);
             }
         })).cycles(1).expectedCyclesThatMakeChanges(1);
+    }
+
+    @Test
+    void probablyButNotActuallySql() {
+        rewriteRun(
+          text(
+            """
+              delete
+              """,
+            """
+              ~~>delete
+              """
+          )
+        );
     }
 
     @Test
