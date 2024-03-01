@@ -20,8 +20,10 @@ import lombok.Value;
 import net.sf.jsqlparser.expression.Function;
 import net.sf.jsqlparser.util.deparser.ExpressionDeParser;
 import org.openrewrite.*;
+import org.openrewrite.internal.StringUtils;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.marker.SearchResult;
+import org.openrewrite.sql.table.DatabaseQueries;
 import org.openrewrite.sql.trait.SqlQuery;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -29,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @Value
 @EqualsAndHashCode(callSuper = false)
 public class FindFunction extends Recipe {
+    transient DatabaseQueries databaseQueries = new DatabaseQueries(this);
 
     @Option(displayName = "Function name",
             description = "The name of the function to find, case insensitive.")
@@ -55,7 +58,11 @@ public class FindFunction extends Recipe {
                             q.mapSql(new ExpressionDeParser() {
                                 @Override
                                 public void visit(Function function) {
-                                    if (function.getName().equalsIgnoreCase(functionName)) {
+                                    if (StringUtils.matchesGlob(function.getName(), functionName)) {
+                                        databaseQueries.insertRow(ctx, new DatabaseQueries.Row(
+                                                getCursor().firstEnclosingOrThrow(SourceFile.class).getSourcePath().toString(),
+                                                q.getSql()
+                                        ));
                                         found.set(true);
                                     }
                                     super.visit(function);

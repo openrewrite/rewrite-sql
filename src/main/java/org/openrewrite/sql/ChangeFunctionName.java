@@ -19,13 +19,16 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import net.sf.jsqlparser.expression.Function;
 import org.openrewrite.*;
+import org.openrewrite.internal.StringUtils;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.sql.internal.ChangeTrackingExpressionDeParser;
+import org.openrewrite.sql.table.DatabaseQueries;
 import org.openrewrite.sql.trait.SqlQuery;
 
 @Value
 @EqualsAndHashCode(callSuper = false)
 public class ChangeFunctionName extends Recipe {
+    transient DatabaseQueries databaseQueries = new DatabaseQueries(this);
 
     @Option(displayName = "Old function name",
             description = "The name of the function to find, case insensitive.")
@@ -56,7 +59,11 @@ public class ChangeFunctionName extends Recipe {
                         .map(q -> q.mapSql(new ChangeTrackingExpressionDeParser() {
                             @Override
                             public void visit(Function function) {
-                                if (function.getName().equalsIgnoreCase(oldFunctionName)) {
+                                if (StringUtils.matchesGlob(function.getName(), oldFunctionName)) {
+                                    databaseQueries.insertRow(ctx, new DatabaseQueries.Row(
+                                            getCursor().firstEnclosingOrThrow(SourceFile.class).getSourcePath().toString(),
+                                            q.getSql()
+                                    ));
                                     trackChange(() -> {
                                         function.setName(newFunctionName);
                                         super.visit(function);

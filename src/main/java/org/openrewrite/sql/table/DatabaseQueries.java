@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 the original author or authors.
+ * Copyright 2023 the original author or authors.
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,5 +15,27 @@
  */
 package org.openrewrite.sql.table;
 
-public class DatabaseQueries {
+import lombok.Value;
+import org.openrewrite.Column;
+import org.openrewrite.DataTable;
+import org.openrewrite.Recipe;
+
+public class DatabaseQueries extends DataTable<DatabaseQueries.Row> {
+
+    public DatabaseQueries(Recipe recipe) {
+        super(recipe,
+                "SQL queries",
+                "Shows matching SQL queries.");
+    }
+
+    @Value
+    public static class Row {
+        @Column(displayName = "Source path",
+                description = "The path to the source file.")
+        String sourcePath;
+
+        @Column(displayName = "Query",
+                description = "The text of the query.")
+        String query;
+    }
 }

@@ -65,6 +65,10 @@ public interface SqlQuery extends Top {
     }
 
     Tree mapSql(ExpressionDeParser map);
+
+    String getSql();
+
+    Statement getQuery();
 }
 
 class SqlDetector {
@@ -80,6 +84,7 @@ class SqlDetector {
 class SqlQueryBase extends Top.Base implements SqlQuery {
     private final Tree tree;
 
+    @Getter
     private final String sql;
 
     @Getter
