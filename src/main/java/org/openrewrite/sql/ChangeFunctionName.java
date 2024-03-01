@@ -22,6 +22,7 @@ import org.openrewrite.*;
 import org.openrewrite.internal.StringUtils;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.sql.internal.ChangeTrackingExpressionDeParser;
+import org.openrewrite.sql.table.DatabaseFunctions;
 import org.openrewrite.sql.table.DatabaseQueries;
 import org.openrewrite.sql.trait.SqlQuery;
 
@@ -29,6 +30,7 @@ import org.openrewrite.sql.trait.SqlQuery;
 @EqualsAndHashCode(callSuper = false)
 public class ChangeFunctionName extends Recipe {
     transient DatabaseQueries databaseQueries = new DatabaseQueries(this);
+    transient DatabaseFunctions databaseFunctions = new DatabaseFunctions(this);
 
     @Option(displayName = "Old function name",
             description = "The name of the function to find, case insensitive.")
@@ -62,6 +64,11 @@ public class ChangeFunctionName extends Recipe {
                                 if (StringUtils.matchesGlob(function.getName(), oldFunctionName)) {
                                     databaseQueries.insertRow(ctx, new DatabaseQueries.Row(
                                             getCursor().firstEnclosingOrThrow(SourceFile.class).getSourcePath().toString(),
+                                            q.getSql()
+                                    ));
+                                    databaseFunctions.insertRow(ctx, new DatabaseFunctions.Row(
+                                            getCursor().firstEnclosingOrThrow(SourceFile.class).getSourcePath().toString(),
+                                            function.getName().toLowerCase(),
                                             q.getSql()
                                     ));
                                     trackChange(() -> {

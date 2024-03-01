@@ -23,6 +23,7 @@ import org.openrewrite.*;
 import org.openrewrite.internal.StringUtils;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.marker.SearchResult;
+import org.openrewrite.sql.table.DatabaseFunctions;
 import org.openrewrite.sql.table.DatabaseQueries;
 import org.openrewrite.sql.trait.SqlQuery;
 
@@ -32,6 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @EqualsAndHashCode(callSuper = false)
 public class FindFunction extends Recipe {
     transient DatabaseQueries databaseQueries = new DatabaseQueries(this);
+    transient DatabaseFunctions databaseFunctions = new DatabaseFunctions(this);
 
     @Option(displayName = "Function name",
             description = "The name of the function to find, case insensitive.")
@@ -61,6 +63,11 @@ public class FindFunction extends Recipe {
                                     if (StringUtils.matchesGlob(function.getName(), functionName)) {
                                         databaseQueries.insertRow(ctx, new DatabaseQueries.Row(
                                                 getCursor().firstEnclosingOrThrow(SourceFile.class).getSourcePath().toString(),
+                                                q.getSql()
+                                        ));
+                                        databaseFunctions.insertRow(ctx, new DatabaseFunctions.Row(
+                                                getCursor().firstEnclosingOrThrow(SourceFile.class).getSourcePath().toString(),
+                                                function.getName().toLowerCase(),
                                                 q.getSql()
                                         ));
                                         found.set(true);
