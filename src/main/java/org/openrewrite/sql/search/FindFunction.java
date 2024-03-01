@@ -30,7 +30,8 @@ import java.util.concurrent.atomic.AtomicReference;
 @EqualsAndHashCode(callSuper = false)
 public class FindFunction extends Recipe {
 
-    @Option
+    @Option(displayName = "Function name",
+            description = "The name of the function to find, case insensitive.")
     String functionName;
 
     @Override
