@@ -15,14 +15,26 @@
  */
 package org.openrewrite.sql;
 
-import org.openrewrite.ExecutionContext;
-import org.openrewrite.Recipe;
-import org.openrewrite.Tree;
-import org.openrewrite.TreeVisitor;
+import lombok.EqualsAndHashCode;
+import lombok.Value;
+import net.sf.jsqlparser.expression.Function;
+import org.openrewrite.*;
 import org.openrewrite.internal.lang.Nullable;
+import org.openrewrite.sql.internal.ChangeTrackingExpressionDeParser;
 import org.openrewrite.sql.trait.SqlQuery;
 
+@Value
+@EqualsAndHashCode(callSuper = false)
 public class ChangeFunctionName extends Recipe {
+
+    @Option(displayName = "Old function name",
+            description = "The name of the function to find, case insensitive.")
+    String oldFunctionName;
+
+    @Option(displayName = "New function name",
+            description = "The new name to use. This will match the casing of " +
+                          "the original method when a replacement is made.")
+    String newFunctionName;
 
     @Override
     public String getDisplayName() {
@@ -41,9 +53,19 @@ public class ChangeFunctionName extends Recipe {
             @Override
             public @Nullable Tree preVisit(Tree tree, ExecutionContext ctx) {
                 return SqlQuery.viewOf(getCursor())
-                        .map(q -> {
-                            return tree;
-                        })
+                        .map(q -> q.mapSql(new ChangeTrackingExpressionDeParser() {
+                            @Override
+                            public void visit(Function function) {
+                                if (function.getName().equalsIgnoreCase(oldFunctionName)) {
+                                    trackChange(() -> {
+                                        function.setName(newFunctionName);
+                                        super.visit(function);
+                                    });
+                                } else {
+                                    super.visit(function);
+                                }
+                            }
+                        }))
                         .orSuccess(super.preVisit(tree, ctx));
             }
         };

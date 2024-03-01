@@ -32,6 +32,7 @@ import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.sql.internal.ChangeTrackingExpressionDeParser;
 import org.openrewrite.text.PlainText;
 
 import java.util.UUID;
@@ -63,7 +64,7 @@ public interface SqlQuery extends Top {
         return SqlQuery.Factory.F.viewOf(cursor);
     }
 
-    String mapSql(ExpressionDeParser map);
+    Tree mapSql(ExpressionDeParser map);
 }
 
 class SqlDetector {
@@ -93,7 +94,7 @@ class SqlQueryBase extends Top.Base implements SqlQuery {
         }
     }
 
-    public String mapSql(ExpressionDeParser map) {
+    public Tree mapSql(ExpressionDeParser map) {
         try {
             StringBuilder sb = new StringBuilder();
 
@@ -103,11 +104,25 @@ class SqlQueryBase extends Top.Base implements SqlQuery {
             StatementDeParser statementDeParser = new StatementDeParser(map, selectDeParser, sb);
 
             query.accept(statementDeParser);
-            return sb.toString();
+            return updateSql(sb.toString(), map);
         } catch (Throwable t) {
             // this is invalid sql
-            return sql;
+            return tree;
         }
+    }
+
+    private Tree updateSql(String sql, ExpressionDeParser deparser) {
+        if (deparser instanceof ChangeTrackingExpressionDeParser) {
+            sql = ChangeTrackingExpressionDeParser.applyChange(this.sql, sql);
+        }
+        if (tree instanceof PlainText) {
+            return ((PlainText) tree).withText(sql);
+        } else if (tree instanceof J.Literal) {
+            J.Literal literal = (J.Literal) tree;
+            return literal.withValue(sql)
+                    .withValueSource("\"" + sql + "\"");
+        }
+        return tree;
     }
 
     @Override
