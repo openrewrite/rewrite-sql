@@ -67,6 +67,7 @@ public class SqlDetector {
             final Stack<DatabaseColumnsUsed.Operation> operation = new Stack<>();
             final Stack<String> table = new Stack<>();
 
+            @Override
             public void visit(Select select) {
                 operation.push(DatabaseColumnsUsed.Operation.SELECT);
                 select.getSelectBody().accept(new SelectVisitorAdapter() {
