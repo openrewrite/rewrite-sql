@@ -16,18 +16,20 @@
 package org.openrewrite.sql.search;
 
 import org.junit.jupiter.api.Test;
+import org.openrewrite.DocumentExample;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
 import static org.openrewrite.test.SourceSpecs.text;
 
-public class FindFunctionTest implements RewriteTest {
+class FindFunctionTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {
         spec.recipe(new FindFunction("nvl"));
     }
 
+    @DocumentExample
     @Test
     void findFunction() {
         rewriteRun(
