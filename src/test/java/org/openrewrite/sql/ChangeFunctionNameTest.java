@@ -16,18 +16,20 @@
 package org.openrewrite.sql;
 
 import org.junit.jupiter.api.Test;
+import org.openrewrite.DocumentExample;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
 import static org.openrewrite.test.SourceSpecs.text;
 
-public class ChangeFunctionNameTest implements RewriteTest {
+class ChangeFunctionNameTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {
         spec.recipe(new ChangeFunctionName("NVL", "COALESCE"));
     }
 
+    @DocumentExample
     @Test
     void findFunction() {
         rewriteRun(

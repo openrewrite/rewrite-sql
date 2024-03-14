@@ -17,6 +17,7 @@ package org.openrewrite.sql.trait;
 
 import net.sf.jsqlparser.util.deparser.ExpressionDeParser;
 import org.junit.jupiter.api.Test;
+import org.openrewrite.DocumentExample;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Tree;
 import org.openrewrite.TreeVisitor;
@@ -28,7 +29,7 @@ import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 import static org.openrewrite.test.SourceSpecs.text;
 
-public class SqlQueryTest implements RewriteTest {
+class SqlQueryTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {
@@ -47,6 +48,7 @@ public class SqlQueryTest implements RewriteTest {
         })).cycles(1).expectedCyclesThatMakeChanges(1);
     }
 
+    @DocumentExample
     @Test
     void probablyButNotActuallySql() {
         rewriteRun(
