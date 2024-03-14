@@ -33,12 +33,14 @@ public class ChangeFunctionName extends Recipe {
     transient DatabaseFunctions databaseFunctions = new DatabaseFunctions(this);
 
     @Option(displayName = "Old function name",
-            description = "The name of the function to find, case insensitive.")
+            description = "The name of the function to find, case insensitive.",
+            example = "NVL")
     String oldFunctionName;
 
     @Option(displayName = "New function name",
             description = "The new name to use. This will match the casing of " +
-                          "the original method when a replacement is made.")
+                          "the original method when a replacement is made.",
+            example = "COALESCE")
     String newFunctionName;
 
     @Override
