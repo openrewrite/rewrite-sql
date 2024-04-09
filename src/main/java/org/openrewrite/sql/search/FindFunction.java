@@ -36,7 +36,8 @@ public class FindFunction extends Recipe {
     transient DatabaseFunctions databaseFunctions = new DatabaseFunctions(this);
 
     @Option(displayName = "Function name",
-            description = "The name of the function to find, case insensitive.")
+            description = "The name of the function to find, case insensitive.",
+            example = "nvl")
     String functionName;
 
     @Override
