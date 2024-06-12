@@ -162,8 +162,10 @@ public class SqlDetector {
         AtomicReference<List<DatabaseColumnsUsed.Row>> rows;
         SourceFile sourceFile;
         int lineNumber;
+
         @Nullable
         String commitHash;
+
         DatabaseColumnsUsed.Operation operation;
         String table;
 
