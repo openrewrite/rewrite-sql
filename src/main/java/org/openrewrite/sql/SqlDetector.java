@@ -70,13 +70,13 @@ public class SqlDetector {
             @Override
             public void visit(Select select) {
                 operation.push(DatabaseColumnsUsed.Operation.SELECT);
-                select.getSelectBody().accept(new SelectVisitorAdapter() {
+                select.accept(new SelectVisitorAdapter() {
                     @Override
                     public void visit(PlainSelect plainSelect) {
                         if (plainSelect.getFromItem() instanceof Table) {
                             Table t = (Table) plainSelect.getFromItem();
                             table.push(t.getName());
-                            for (SelectItem selectItem : plainSelect.getSelectItems()) {
+                            for (SelectItem<?> selectItem : plainSelect.getSelectItems()) {
                                 selectItem.accept(new ColumnDetector(rows, sourceFile, lineNumber, commitHash,
                                         operation.peek(), table.peek()));
                             }

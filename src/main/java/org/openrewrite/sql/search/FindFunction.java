@@ -21,13 +21,13 @@ import net.sf.jsqlparser.expression.Function;
 import net.sf.jsqlparser.util.deparser.ExpressionDeParser;
 import org.openrewrite.*;
 import org.openrewrite.internal.StringUtils;
-import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.marker.SearchResult;
 import org.openrewrite.sql.table.DatabaseFunctions;
 import org.openrewrite.sql.table.DatabaseQueries;
-import org.openrewrite.sql.trait.SqlQuery;
 
 import java.util.concurrent.atomic.AtomicReference;
+
+import static org.openrewrite.sql.trait.Traits.sql;
 
 @Value
 @EqualsAndHashCode(callSuper = false)
@@ -52,34 +52,27 @@ public class FindFunction extends Recipe {
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
-        return new TreeVisitor<Tree, ExecutionContext>() {
-            @Override
-            public @Nullable Tree preVisit(Tree tree, ExecutionContext ctx) {
-                return SqlQuery.viewOf(getCursor())
-                        .map(q -> {
-                            AtomicReference<Boolean> found = new AtomicReference<>(false);
-                            q.mapSql(new ExpressionDeParser() {
-                                @Override
-                                public void visit(Function function) {
-                                    if (StringUtils.matchesGlob(function.getName(), functionName)) {
-                                        databaseQueries.insertRow(ctx, new DatabaseQueries.Row(
-                                                getCursor().firstEnclosingOrThrow(SourceFile.class).getSourcePath().toString(),
-                                                q.getSql()
-                                        ));
-                                        databaseFunctions.insertRow(ctx, new DatabaseFunctions.Row(
-                                                getCursor().firstEnclosingOrThrow(SourceFile.class).getSourcePath().toString(),
-                                                function.getName().toLowerCase(),
-                                                q.getSql()
-                                        ));
-                                        found.set(true);
-                                    }
-                                    super.visit(function);
-                                }
-                            });
-                            return found.get() ? SearchResult.found(tree) : tree;
-                        })
-                        .orSuccess(super.preVisit(tree, ctx));
-            }
-        };
+        return sql().asVisitor((sql, ctx) -> {
+            AtomicReference<Boolean> found = new AtomicReference<>(false);
+            sql.visitSql(new ExpressionDeParser() {
+                @Override
+                public void visit(Function function) {
+                    if (StringUtils.matchesGlob(function.getName(), functionName)) {
+                        databaseQueries.insertRow(ctx, new DatabaseQueries.Row(
+                                sql.getCursor().firstEnclosingOrThrow(SourceFile.class).getSourcePath().toString(),
+                                sql.getString()
+                        ));
+                        databaseFunctions.insertRow(ctx, new DatabaseFunctions.Row(
+                                sql.getCursor().firstEnclosingOrThrow(SourceFile.class).getSourcePath().toString(),
+                                function.getName().toLowerCase(),
+                                sql.getString()
+                        ));
+                        found.set(true);
+                    }
+                    super.visit(function);
+                }
+            });
+            return found.get() ? SearchResult.found(sql.getTree()) : sql.getTree();
+        });
     }
 }

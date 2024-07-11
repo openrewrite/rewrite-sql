@@ -15,17 +15,14 @@
  */
 package org.openrewrite.sql.trait;
 
-import net.sf.jsqlparser.util.deparser.ExpressionDeParser;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
-import org.openrewrite.ExecutionContext;
-import org.openrewrite.Tree;
-import org.openrewrite.TreeVisitor;
 import org.openrewrite.marker.SearchResult;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
 import static org.openrewrite.java.Assertions.java;
+import static org.openrewrite.sql.trait.Traits.sql;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 import static org.openrewrite.test.SourceSpecs.text;
 
@@ -33,19 +30,12 @@ class SqlQueryTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {
-        spec.recipe(toRecipe(() -> new TreeVisitor<>() {
-            @Override
-            public Tree preVisit(Tree tree, ExecutionContext executionContext) {
-                return SqlQuery.viewOf(getCursor())
-                  .map((SqlQuery q) -> {
-                      q.mapSql(new ExpressionDeParser());
-//                      assertThat(q.mapSql(new ExpressionDeParser()))
-//                        .isEqualTo("select * from table where id = 1");
-                      return SearchResult.found(tree);
-                  })
-                  .orSuccess(tree);
-            }
-        })).cycles(1).expectedCyclesThatMakeChanges(1);
+        spec
+          .recipe(toRecipe(() -> sql()
+            .asVisitor(sql -> SearchResult.found(sql.getTree()))
+          ))
+          .cycles(1)
+          .expectedCyclesThatMakeChanges(1);
     }
 
     @DocumentExample

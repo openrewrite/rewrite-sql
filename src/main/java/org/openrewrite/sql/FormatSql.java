@@ -44,15 +44,24 @@ public class FormatSql extends Recipe {
     @Nullable
     String sqlDialect;
 
-    @Option(displayName = "Characters used for indentation.", description = "Defaults to two spaces.", example = "    ", required = false)
+    @Option(displayName = "Characters used for indentation.",
+            description = "Defaults to two spaces.",
+            example = "    ",
+            required = false)
     @Nullable
     String indent;
 
-    @Option(displayName = "Maximum length to treat inline block as one line.", description = "Defaults to 50.", example = "100", required = false)
+    @Option(displayName = "Maximum length to treat inline block as one line.",
+            description = "Defaults to 50.",
+            example = "100",
+            required = false)
     @Nullable
     Integer maxColumnLength;
 
-    @Option(displayName = "Converts keywords to uppercase.", description = "Defaults to false (not safe to use when SQL dialect has case-sensitive identifiers).", example = "true", required = false)
+    @Option(displayName = "Converts keywords to uppercase.",
+            description = "Defaults to false (not safe to use when SQL dialect has case-sensitive identifiers).",
+            example = "true",
+            required = false)
     @Nullable
     Boolean uppercase;
 
@@ -64,7 +73,7 @@ public class FormatSql extends Recipe {
         this(sqlDialect, null, null, null);
     }
 
-    public FormatSql(String sqlDialect, String indent, Integer maxColumnLength, Boolean uppercase) {
+    public FormatSql(@Nullable String sqlDialect, @Nullable String indent, @Nullable Integer maxColumnLength, @Nullable Boolean uppercase) {
         this.sqlDialect = sqlDialect;
         this.indent = indent;
         this.maxColumnLength = maxColumnLength;
@@ -73,7 +82,7 @@ public class FormatSql extends Recipe {
 
     @Override
     public String getDisplayName() {
-        return "Format SQL in String Text Blocks";
+        return "Format SQL in string text blocks";
     }
 
     @Override
@@ -83,23 +92,6 @@ public class FormatSql extends Recipe {
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
-        return Preconditions.check(
-                new UsesJavaVersion<>(15),
-                new SqlTextBlockFormatVisitor(sqlDialect, indent, maxColumnLength, uppercase));
-    }
-}
-
-class SqlTextBlockFormatVisitor extends JavaIsoVisitor<ExecutionContext> {
-    private final SqlDetector sqlDetector = new SqlDetector();
-    private final FormatConfig config;
-    private final SqlFormatter.Formatter sqlFormatter;
-
-    SqlTextBlockFormatVisitor(
-            String sqlDialect,
-            String indent,
-            Integer maxColumnLength,
-            Boolean uppercase
-    ) {
         FormatConfigBuilder builder = FormatConfig.builder();
         if (indent != null) {
             builder = builder.indent(indent);
@@ -110,34 +102,41 @@ class SqlTextBlockFormatVisitor extends JavaIsoVisitor<ExecutionContext> {
         if (maxColumnLength != null) {
             builder = builder.maxColumnLength(maxColumnLength);
         }
-        this.config = builder.build();
-        this.sqlFormatter = SqlFormatter.of(sqlDialect);
-    }
+        FormatConfig config = builder.build();
+        SqlFormatter.Formatter sqlFormatter = SqlFormatter.of(sqlDialect);
 
-    @Override
-    public J.Literal visitLiteral(J.Literal lit, ExecutionContext ctx) {
-        J.Literal literal = super.visitLiteral(lit, ctx);
-        if (isTextBlock(literal)) {
-            String originalValue = (String) literal.getValue();
-            if (sqlDetector.isSql(originalValue)) {
-                String formatted = sqlFormatter.format(originalValue, config);
-                if (!originalValue.equals(formatted)) {
-                    TabsAndIndentsStyle style = getCursor().firstEnclosingOrThrow(SourceFile.class)
-                            .getStyle(TabsAndIndentsStyle.class);
-                    String indented = Indenter.indent(literal.getValueSource(), formatted, style);
-                    return literal
-                            .withValue(formatted)
-                            .withValueSource(String.format("\"\"\"%s\"\"\"", indented));
+        return Preconditions.check(
+                new UsesJavaVersion<>(15),
+                new JavaIsoVisitor<ExecutionContext>() {
+                    private final SqlDetector sqlDetector = new SqlDetector();
+
+                    @Override
+                    public J.Literal visitLiteral(J.Literal lit, ExecutionContext ctx) {
+                        J.Literal literal = super.visitLiteral(lit, ctx);
+                        if (isTextBlock(literal)) {
+                            String originalValue = (String) literal.getValue();
+                            if (sqlDetector.isSql(originalValue)) {
+                                String formatted = sqlFormatter.format(originalValue, config);
+                                if (!originalValue.equals(formatted)) {
+                                    TabsAndIndentsStyle style = getCursor().firstEnclosingOrThrow(SourceFile.class)
+                                            .getStyle(TabsAndIndentsStyle.class);
+                                    String indented = Indenter.indent(literal.getValueSource(), formatted, style);
+                                    return literal
+                                            .withValue(formatted)
+                                            .withValueSource(String.format("\"\"\"%s\"\"\"", indented));
+                                }
+                            }
+                        }
+                        return literal;
+                    }
+
+                    private boolean isTextBlock(J.Literal l) {
+                        return TypeUtils.isString(l.getType()) &&
+                               l.getValueSource() != null &&
+                               l.getValueSource().startsWith("\"\"\"");
+                    }
                 }
-            }
-        }
-        return literal;
-    }
-
-    private boolean isTextBlock(J.Literal l) {
-        return TypeUtils.isString(l.getType()) &&
-                l.getValueSource() != null &&
-                l.getValueSource().startsWith("\"\"\"");
+        );
     }
 }
 
@@ -176,7 +175,7 @@ class Indenter {
         int spaceCount = tabAndSpaceCounts[1];
         if (useTabCharacter) {
             return StringUtils.repeat("\t", tabCount) +
-                    StringUtils.repeat(" ", spaceCount);
+                   StringUtils.repeat(" ", spaceCount);
         } else {
             // replace tab with spaces if the style is using spaces
             return StringUtils.repeat(" ", tabCount * tabSize + spaceCount);

@@ -20,11 +20,11 @@ import lombok.Value;
 import net.sf.jsqlparser.expression.Function;
 import org.openrewrite.*;
 import org.openrewrite.internal.StringUtils;
-import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.sql.internal.ChangeTrackingExpressionDeParser;
 import org.openrewrite.sql.table.DatabaseFunctions;
 import org.openrewrite.sql.table.DatabaseQueries;
-import org.openrewrite.sql.trait.SqlQuery;
+
+import static org.openrewrite.sql.trait.Traits.sql;
 
 @Value
 @EqualsAndHashCode(callSuper = false)
@@ -56,34 +56,27 @@ public class ChangeFunctionName extends Recipe {
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
-        return new TreeVisitor<Tree, ExecutionContext>() {
+        return sql().asVisitor((sql, ctx) -> sql.visitSql(new ChangeTrackingExpressionDeParser() {
             @Override
-            public @Nullable Tree preVisit(Tree tree, ExecutionContext ctx) {
-                return SqlQuery.viewOf(getCursor())
-                        .map(q -> q.mapSql(new ChangeTrackingExpressionDeParser() {
-                            @Override
-                            public void visit(Function function) {
-                                if (StringUtils.matchesGlob(function.getName(), oldFunctionName)) {
-                                    databaseQueries.insertRow(ctx, new DatabaseQueries.Row(
-                                            getCursor().firstEnclosingOrThrow(SourceFile.class).getSourcePath().toString(),
-                                            q.getSql()
-                                    ));
-                                    databaseFunctions.insertRow(ctx, new DatabaseFunctions.Row(
-                                            getCursor().firstEnclosingOrThrow(SourceFile.class).getSourcePath().toString(),
-                                            function.getName().toLowerCase(),
-                                            q.getSql()
-                                    ));
-                                    trackChange(() -> {
-                                        function.setName(newFunctionName);
-                                        super.visit(function);
-                                    });
-                                } else {
-                                    super.visit(function);
-                                }
-                            }
-                        }))
-                        .orSuccess(super.preVisit(tree, ctx));
+            public void visit(Function function) {
+                if (StringUtils.matchesGlob(function.getName(), oldFunctionName)) {
+                    databaseQueries.insertRow(ctx, new DatabaseQueries.Row(
+                            sql.getCursor().firstEnclosingOrThrow(SourceFile.class).getSourcePath().toString(),
+                            sql.getString()
+                    ));
+                    databaseFunctions.insertRow(ctx, new DatabaseFunctions.Row(
+                            sql.getCursor().firstEnclosingOrThrow(SourceFile.class).getSourcePath().toString(),
+                            function.getName().toLowerCase(),
+                            sql.getString()
+                    ));
+                    trackChange(() -> {
+                        function.setName(newFunctionName);
+                        super.visit(function);
+                    });
+                } else {
+                    super.visit(function);
+                }
             }
-        };
+        }));
     }
 }

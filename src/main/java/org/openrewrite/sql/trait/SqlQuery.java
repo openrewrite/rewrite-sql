@@ -15,9 +15,7 @@
  */
 package org.openrewrite.sql.trait;
 
-import fj.data.Validation;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Value;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
@@ -26,81 +24,44 @@ import net.sf.jsqlparser.util.deparser.SelectDeParser;
 import net.sf.jsqlparser.util.deparser.StatementDeParser;
 import org.openrewrite.Cursor;
 import org.openrewrite.Tree;
-import org.openrewrite.analysis.trait.Top;
-import org.openrewrite.analysis.trait.TraitFactory;
-import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.internal.lang.Nullable;
-import org.openrewrite.java.tree.Expression;
+import org.openrewrite.java.trait.Literal;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.sql.internal.ChangeTrackingExpressionDeParser;
 import org.openrewrite.text.PlainText;
+import org.openrewrite.trait.SimpleTraitMatcher;
+import org.openrewrite.trait.Trait;
 
-import java.util.UUID;
 import java.util.regex.Pattern;
 
-public interface SqlQuery extends Top {
-    enum Factory implements TraitFactory<SqlQuery> {
-        F;
+import static org.openrewrite.java.trait.Traits.literal;
 
-        @Override
-        public Validation<TraitErrors, SqlQuery> viewOf(Cursor cursor) {
-            if (cursor.getValue() instanceof J.Literal) {
-                J.Literal literal = cursor.getValue();
-                if (SqlDetector.probablySql(literal.getValue())) {
-                    return SqlQueryBase.viewOf(cursor, literal.getValue().toString()).map(m -> m);
-                }
-            } else if (cursor.getValue() instanceof PlainText) {
-                PlainText plainText = cursor.getValue();
-                if (SqlDetector.probablySql(plainText.getText())) {
-                    return SqlQueryBase.viewOf(cursor, plainText.getText()).map(m -> m);
-                }
-            }
-            return TraitErrors.invalidTraitCreationType(SqlQuery.class, cursor,
-                    Expression.class, PlainText.class);
+@Value
+public class SqlQuery implements Trait<Tree> {
+    Cursor cursor;
+
+    public String getString() {
+        Object value = cursor.getValue();
+        if (value instanceof J.Literal) {
+            return literal().get(cursor)
+                    .map(Literal::getString)
+                    .orElseThrow(() -> new IllegalStateException("Should have only matched on string literals"));
+        } else if (value instanceof PlainText) {
+            return ((PlainText) value).getText();
         }
+        throw new UnsupportedOperationException("Implement SQL extraction from tree type " + value.getClass().getName());
     }
 
-    static Validation<TraitErrors, SqlQuery> viewOf(Cursor cursor) {
-        return SqlQuery.Factory.F.viewOf(cursor);
-    }
-
-    Tree mapSql(ExpressionDeParser map);
-
-    String getSql();
-
-    Statement getQuery();
-}
-
-class SqlDetector {
-    private static final Pattern SIMPLE_SQL_HEURISTIC = Pattern.compile("SELECT|UPDATE|DELETE|INSERT",
-            Pattern.CASE_INSENSITIVE);
-
-    static boolean probablySql(@Nullable Object maybeSql) {
-        return maybeSql != null && SIMPLE_SQL_HEURISTIC.matcher(maybeSql.toString()).find();
-    }
-}
-
-@AllArgsConstructor
-class SqlQueryBase extends Top.Base implements SqlQuery {
-    private final Tree tree;
-
-    @Getter
-    private final String sql;
-
-    @Getter
-    private final Statement query;
-
-    static Validation<TraitErrors, SqlQueryBase> viewOf(Cursor cursor, String sql) {
+    public Statement getStatement() {
         try {
-            return Validation.success(new SqlQueryBase(cursor.getValue(), sql, CCJSqlParserUtil.parse(sql)));
+            return CCJSqlParserUtil.parse(getString());
         } catch (JSQLParserException e) {
-            return TraitErrors.invalidTraitCreation(SqlQuery.class,
-                    "Failed to parse SQL: " + e.getMessage());
+            throw new IllegalStateException("Unexpected SQL parsing error since parsing was " +
+                                            "validated prior to the creation of the trait.");
         }
     }
 
-    @Override
-    public Tree mapSql(ExpressionDeParser map) {
+    public Tree visitSql(ExpressionDeParser map) {
         try {
             StringBuilder sb = new StringBuilder();
 
@@ -109,30 +70,61 @@ class SqlQueryBase extends Top.Base implements SqlQuery {
             map.setBuffer(sb);
             StatementDeParser statementDeParser = new StatementDeParser(map, selectDeParser, sb);
 
-            query.accept(statementDeParser);
+            getStatement().accept(statementDeParser);
             return updateSql(sb.toString(), map);
         } catch (Throwable t) {
             // this is invalid sql
-            return tree;
+            return getTree();
         }
     }
 
     private Tree updateSql(String sql, ExpressionDeParser deparser) {
         if (deparser instanceof ChangeTrackingExpressionDeParser) {
-            sql = ChangeTrackingExpressionDeParser.applyChange(this.sql, sql);
+            sql = ChangeTrackingExpressionDeParser.applyChange(getString(), sql);
         }
+        Tree tree = getTree();
         if (tree instanceof PlainText) {
             return ((PlainText) tree).withText(sql);
         } else if (tree instanceof J.Literal) {
             J.Literal literal = (J.Literal) tree;
-            return literal.withValue(sql)
+            return literal
+                    .withValue(sql)
                     .withValueSource("\"" + sql + "\"");
         }
         return tree;
     }
 
-    @Override
-    public UUID getId() {
-        return tree.getId();
+    public static class Matcher extends SimpleTraitMatcher<SqlQuery> {
+        private static final Pattern SIMPLE_SQL_HEURISTIC = Pattern.compile("SELECT|UPDATE|DELETE|INSERT",
+                Pattern.CASE_INSENSITIVE);
+
+        @Override
+        protected @Nullable SqlQuery test(Cursor cursor) {
+            String sql = null;
+            Object value = cursor.getValue();
+            if (value instanceof J.Literal) {
+                J.Literal literal = (J.Literal) value;
+                if (probablySql(literal.getValue())) {
+                    sql = literal.getValue().toString();
+                }
+            } else if (value instanceof PlainText) {
+                PlainText plainText = (PlainText) value;
+                if (probablySql(plainText.getText())) {
+                    sql = plainText.getText();
+                }
+            }
+            if (sql != null) {
+                try {
+                    CCJSqlParserUtil.parse(sql);
+                    return new SqlQuery(cursor);
+                } catch (JSQLParserException ignored) {
+                }
+            }
+            return null;
+        }
+
+        static boolean probablySql(@Nullable Object maybeSql) {
+            return maybeSql != null && SIMPLE_SQL_HEURISTIC.matcher(maybeSql.toString()).find();
+        }
     }
 }

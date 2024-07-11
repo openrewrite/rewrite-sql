@@ -19,8 +19,6 @@ dependencies {
     implementation("org.openrewrite:rewrite-xml")
     implementation("org.openrewrite:rewrite-yaml")
 
-    implementation("org.openrewrite.meta:rewrite-analysis:${rewriteVersion}")
-
     testImplementation("org.openrewrite:rewrite-test")
     testRuntimeOnly("org.openrewrite:rewrite-java-17")
 }
