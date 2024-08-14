@@ -16,10 +16,10 @@
 package org.openrewrite.sql.table;
 
 import lombok.Value;
+import org.jspecify.annotations.Nullable;
 import org.openrewrite.Column;
 import org.openrewrite.DataTable;
 import org.openrewrite.Recipe;
-import org.openrewrite.internal.lang.Nullable;
 
 public class DatabaseColumnsUsed extends DataTable<DatabaseColumnsUsed.Row> {
 
