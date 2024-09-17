@@ -38,7 +38,6 @@ class SqlQueryTest implements RewriteTest {
           .expectedCyclesThatMakeChanges(1);
     }
 
-    @DocumentExample
     @Test
     void probablyButNotActuallySql() {
         rewriteRun(
@@ -53,6 +52,7 @@ class SqlQueryTest implements RewriteTest {
         );
     }
 
+    @DocumentExample
     @Test
     void javaLiteral() {
         rewriteRun(

@@ -18,6 +18,7 @@ package org.openrewrite.sql;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.openrewrite.DocumentExample;
 import org.openrewrite.Tree;
 import org.openrewrite.marker.GitProvenance;
 import org.openrewrite.sql.table.DatabaseColumnsUsed;
@@ -191,6 +192,37 @@ class FindSqlTest implements RewriteTest {
                   assertThat(a).startsWith("~~>");
                   return a;
               })
+          )
+        );
+    }
+
+    @DocumentExample
+    @Test
+    void allColumns() {
+        rewriteRun(
+          spec -> spec.dataTable(DatabaseColumnsUsed.Row.class, rows -> {
+              assertThat(rows).hasSize(1);
+              DatabaseColumnsUsed.Row row = rows.get(0);
+              assertThat(row.getOperation()).isEqualTo(DatabaseColumnsUsed.Operation.SELECT);
+              assertThat(row.getTable()).isEqualTo("table");
+              assertThat(row.getColumn()).isEqualTo("*");
+          }),
+          //language=java
+          java(
+            """
+              class Test {
+                  void test() {
+                      String sql = "select * from table where id = 1";
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() {
+                      String sql = /*~~>*/"select * from table where id = 1";
+                  }
+              }
+              """
           )
         );
     }

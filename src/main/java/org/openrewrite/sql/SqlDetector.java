@@ -26,10 +26,7 @@ import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.StatementVisitorAdapter;
 import net.sf.jsqlparser.statement.delete.Delete;
-import net.sf.jsqlparser.statement.select.PlainSelect;
-import net.sf.jsqlparser.statement.select.Select;
-import net.sf.jsqlparser.statement.select.SelectItem;
-import net.sf.jsqlparser.statement.select.SelectVisitorAdapter;
+import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
 import net.sf.jsqlparser.statement.update.UpdateSet;
 import org.jspecify.annotations.Nullable;
@@ -170,16 +167,24 @@ public class SqlDetector {
         String table;
 
         @Override
+        public void visit(AllColumns columns) {
+            addRowForColumnName(columns.toString());
+        }
+
+        @Override
         public void visit(Column column) {
-            DatabaseColumnsUsed.Row row = new DatabaseColumnsUsed.Row(
+            addRowForColumnName(column.getColumnName());
+        }
+
+        private void addRowForColumnName(String columnName) {
+            addRow(rows, new DatabaseColumnsUsed.Row(
                     separatorsToUnix(sourceFile.getSourcePath().toString()),
                     lineNumber,
                     commitHash,
                     operation,
                     table,
-                    column.getColumnName()
-            );
-            addRow(rows, row);
+                    columnName
+            ));
         }
     }
 
