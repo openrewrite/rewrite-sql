@@ -18,6 +18,7 @@ package org.openrewrite.sql;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.openrewrite.DocumentExample;
 import org.openrewrite.Tree;
 import org.openrewrite.marker.GitProvenance;
 import org.openrewrite.sql.table.DatabaseColumnsUsed;
@@ -195,6 +196,7 @@ class FindSqlTest implements RewriteTest {
         );
     }
 
+    @DocumentExample
     @Test
     void allColumns() {
         rewriteRun(
