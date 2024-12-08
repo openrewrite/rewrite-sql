@@ -63,13 +63,12 @@ public class Db2ToPostgresTest implements RewriteTest{
         rewriteRun(
           // language=SQL
           text(
-            "CREATE TABLE orders (notes CLOB(1M));"
+            "CREATE TABLE orders (notes CLOB(1M));",
             "CREATE TABLE orders (notes TEXT(1M));",
             spec -> spec.path("src/main/resources/db2.sql")
             )
         );
     }
-
 
 
 }
